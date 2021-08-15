@@ -87,27 +87,13 @@ i2c_found = si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, -4440);
 
   // Initialize I2C slaves
 
- // Clear the band bits
- // Wire.beginTransmission(0x38);
- // Wire.write(0x01);
- // Wire.write(0x00);
- // res = Wire.endTransmission(1);
 
   lpf.write(0);
   
-
-  // Set all gpio pins as outputs
-  //Wire.beginTransmission(0x38);
-  //Wire.write(0x03);
-  //Wire.write(0x00);
-  //res = Wire.endTransmission(1);
+  
   lpf.set_gpio_config(0);
 
-  // Select the test band
-  //Wire.beginTransmission(0x38);
-  //Wire.write(0x01);
-  //Wire.write(0x20);
-  //res = Wire.endTransmission(1);
+  
   lpf.write(0x01);
 
 
