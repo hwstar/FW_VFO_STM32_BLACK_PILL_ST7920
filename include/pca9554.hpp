@@ -1,4 +1,6 @@
+#ifndef __PCA9554_HPP__
 #include <Arduino.h>
+
 
 class PCA9554
 {
@@ -24,3 +26,9 @@ class PCA9554
     uint8_t res;
 
 };
+
+#define __PCA9554_HPP__
+
+#endif
+
+
