@@ -1,6 +1,56 @@
 #ifndef __CONFIG_HPP__
-
+#include <Arduino.h>
 #include <bandsel.hpp>
+
+//
+// Pins used
+//
+// 21 GPIO's
+
+#define PIN_ENCODER_I PB0
+#define PIN_ENCODER_Q PB1
+#define PIN_ENCODER_SWITCH PA15
+
+#define PIN_KEYBOARD_C1 PB12
+#define PIN_KEYBOARD_C2 PB13
+#define PIN_KEYBOARD_C3 PB14
+#define PIN_KEYBOARD_C4 PB15
+#define PIN_KEYBOARD_R1 PB4
+#define PIN_KEYBOARD_R2 PB5
+#define PIN_KEYBOARD_R3 PB8
+#define PIN_KEYBOARD_R4 PB9
+
+#define PIN_PTT PB10 
+#define PIN_TUNE PB11
+
+#define PIN_I2C_SDA PB7 // I2C1
+#define PIN_I2C_SCL PB6 // I2C1
+
+#define PIN_SPI_CLK PA5 // SPI1
+#define PIN_SPI_MOSI PA7 // SPI1
+#define PIN_SPI_MISO PA6 // SPI1
+#define PIN_SPI_CS PA8
+
+#define PIN_UART_TX PA9 // SERIAL1
+#define PIN_UART_RX PA10 // SERAIL1
+
+#define PIN_STM32_LED PC13
+
+//
+// Unused pins
+// 
+// PA0
+// PA1
+// PA2
+// PA3
+// PA4
+// PA11
+// PA12
+// PB3
+// PC14
+// PC15
+// 
+
 
 // Clock Source Calibration value
 #define CLK_SOURCE_CAL_VALUE -4440

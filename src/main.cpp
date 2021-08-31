@@ -1,10 +1,9 @@
 #include <Arduino.h>
-#include <Wire.h>
+#include <TaskScheduler.h>
 
 #include <config.hpp>
-#include <pca9554.hpp>
-#include <bandsel.hpp>
 #include <vfo.hpp>
+#include <logger.hpp>
 
 
 
@@ -27,9 +26,27 @@ void setup() {
   // Wait for power rails to stabilize before doing anything with the Si5351
   delay(100);
 
-   // LED off
-  pinMode(PC13, OUTPUT);
-  digitalWrite(PC13, 1);
+
+  // INPUTS
+  pinMode(PIN_PTT, INPUT_PULLUP);
+  pinMode(PIN_TUNE, INPUT_PULLUP);
+  pinMode(PIN_ENCODER_I, INPUT_PULLUP);
+  pinMode(PIN_ENCODER_Q, INPUT_PULLUP);
+  pinMode(PIN_ENCODER_SWITCH, INPUT_PULLUP);
+  pinMode(PIN_KEYBOARD_R1, INPUT_PULLDOWN);
+  pinMode(PIN_KEYBOARD_R2, INPUT_PULLDOWN);
+  pinMode(PIN_KEYBOARD_R3, INPUT_PULLDOWN);
+  pinMode(PIN_KEYBOARD_R4, INPUT_PULLDOWN);
+
+  // Outputs
+  pinMode(PIN_STM32_LED,OUTPUT);
+  digitalWrite(PIN_STM32_LED, 1);
+
+  pinMode(PIN_KEYBOARD_C1, OUTPUT);
+  pinMode(PIN_KEYBOARD_C2, OUTPUT);
+  pinMode(PIN_KEYBOARD_C3, OUTPUT);
+  pinMode(PIN_KEYBOARD_C4, OUTPUT);
+  
 
   
   // Initialize serial port
@@ -40,7 +57,7 @@ void setup() {
 
 // Initialize band select object
 
-  if(!vfo.begin(14280000UL))
+  if(!vfo.begin(14250000UL))
     digitalWrite(PC13,1);
 
 

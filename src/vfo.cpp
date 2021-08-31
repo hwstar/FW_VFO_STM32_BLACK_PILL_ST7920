@@ -3,6 +3,7 @@
 
 #include <config.hpp>
 #include <vfo.hpp>
+#include <logger.hpp>
 
 #include <si5351.h>
 
@@ -232,20 +233,22 @@ bool VFO::set_freq (uint32_t freq)
 
 bool VFO::begin(uint32_t init_freq) 
 {
-    digitalWrite(PC13,1); // LED off
+    digitalWrite(PIN_STM32_LED,1); // LED off
 
     uint8_t i;
 
 
     // SI5351 library calls Wire.begin, so it has to be the first thing initialized
 
-    if(!si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE))
+    if(!si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+        logger.error(ERR_NO_CLK_GEN);
         return false;
+    }
 
     // Initialize the TRX motherboard defaults
 
     if(!trx.present()){
-        //error.log(ERR_NO_TRX)
+        logger.error(ERR_NO_TRX);
         return false;
     }
     else{
@@ -338,7 +341,7 @@ bool VFO::begin(uint32_t init_freq)
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
 
 
-    digitalWrite(PC13,0); // LED on
+    digitalWrite(PIN_STM32_LED,0); // LED on
 
     return true;
 

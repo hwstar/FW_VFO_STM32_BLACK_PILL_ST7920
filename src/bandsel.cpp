@@ -4,6 +4,7 @@
   
 
   #include <bandsel.hpp>
+  #include <logger.hpp>
 
   
   
@@ -15,12 +16,12 @@
     
         
         if(!lpf->present()){
-            //error.log(ERR_NO_LPF)
+            logger.error(ERR_NO_LPF);
             return false;
         }
          
         if(!bpf->present()){
-            //error_log(ERR_NO_BPF)
+            logger.error(ERR_NO_BPF);
             return false;
         }
 
