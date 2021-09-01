@@ -63,7 +63,13 @@ void VFO::update_clock_gen()
 {
     // Calculate the injection frequencies from the vfo frequency
   
+    uint32_t first_lo_freq;
+    uint32_t second_lo_freq;
     
+    //
+    // Calculate the injection frequencies
+    //
+
     high_injection_freq = vfo_freq + bfo_carrier_freq;
     if(vfo_freq > bfo_carrier_freq){
         low_injection_freq = vfo_freq - bfo_carrier_freq;
@@ -79,43 +85,22 @@ void VFO::update_clock_gen()
     Serial1.printf("Low Injection    : %lu\r\n", low_injection_freq);
     */
     
-   
-    if(vfo_freq < bfo_carrier_freq){ // VFO Below IF
-        if(is_usb)
-            tx_filter_offset = -XTAL_FILTER_BW;
-        else // LSB
-            tx_filter_offset = -XTAL_FILTER_BW; // Correct
-    } else { // VFO Above IF
-        if(is_usb)
-            tx_filter_offset = XTAL_FILTER_BW;
-        else //LSB
-            tx_filter_offset = -XTAL_FILTER_BW;
-    }
 
-    /* 
-    Serial1.printf("TX Filter Offset    : %ld\r\n", tx_filter_offset);
-    */
-    
-    
     if(is_txing){
         // First LO gets the carrier frequency
-        si5351.set_freq_hz(bfo_carrier_freq, clock_outputs[FIRST_LO_ID]);
-        if(is_usb){
-            si5351.set_freq_hz(low_injection_freq + tx_filter_offset, clock_outputs[SECOND_LO_ID]);
-        } else { // LSB
-            si5351.set_freq_hz(high_injection_freq + tx_filter_offset, clock_outputs[SECOND_LO_ID]);
-        }
+        first_lo_freq = bfo_carrier_freq;
+        second_lo_freq = (is_usb)? high_injection_freq : low_injection_freq;
+
     } else { // RX
         // Second LO gets the carrier frequency.
-        si5351.set_freq_hz(bfo_carrier_freq, clock_outputs[SECOND_LO_ID]);
-        if(is_usb){
-            si5351.set_freq_hz(high_injection_freq, clock_outputs[FIRST_LO_ID]);
-        }
-        else { // LSB
-            si5351.set_freq_hz(low_injection_freq, clock_outputs[FIRST_LO_ID]);
-        }
-
+        second_lo_freq = bfo_carrier_freq;
+        first_lo_freq = (is_usb)? high_injection_freq : low_injection_freq;
     }
+    //
+    // Set the LO frequencies
+    //
+    si5351.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
+    si5351.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
 }
 
 //

@@ -5,7 +5,7 @@
 //
 // Pins used
 //
-// 21 GPIO's
+// 23 GPIO's
 
 #define PIN_ENCODER_I PB0
 #define PIN_ENCODER_Q PB1
@@ -34,7 +34,9 @@
 #define PIN_UART_TX PA9 // SERIAL1
 #define PIN_UART_RX PA10 // SERAIL1
 
-#define PIN_STM32_LED PC13
+#define PIN_PA_FAN_ENABLE PB3 
+
+#define PIN_STM32_LED PC13 // Blue pill LED.
 
 //
 // Unused pins
@@ -43,25 +45,23 @@
 // PA1
 // PA2
 // PA3
-// PA4
-// PA11
-// PA12
-// PB3
+// PA4  - SPI NSS
+// PA11 - USB DM
+// PA12 - USB DP
 // PC14
 // PC15
 // 
 
 
 // Clock Source Calibration value
+// From Clock source calibration Records
 #define CLK_SOURCE_CAL_VALUE -4440
 
 // Carrier oscillator frequency (Depends on crystal filter)
+// Empirically determined. Measured with test equipment.
 
 #define CARRIER_OSC_FREQ  9000683UL // Value is in Hz.(9.000683 MHz)
 
-// Crystal filter bandwidth
-
-#define XTAL_FILTER_BW 2234UL       // Crystal Filter bandwidth in Hz
 
 // Band 1
 #define BAND_FILTER_1       BAND_160M
@@ -118,14 +118,16 @@
 #define FIRST_LO_ID 0               // Is the VFO in RX and the Carrier oscillator in TX
 #define SECOND_LO_ID 2              // Is the BFO in RX, and the VFO in TX
      
-
+//
 // I2C Slaves
+// 7 bit I2C addresses
+//
 #define TRX_I2C_ADDR 0x38           // Transceiver control
 #define BPF_I2C_ADDR 0x39           // Band pass filter control
 #define LPF_I2C_ADDR 0x3A           // Low pass filter control
 
 
-#define _CONFIG_HPP__
+#define __CONFIG_HPP__
 
 #endif
 

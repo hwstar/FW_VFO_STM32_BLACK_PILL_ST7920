@@ -16,8 +16,19 @@ const String version = "0.0";
 uint8_t output_num = 0;
 uint8_t drive_strength = 3;
 
+// Static objects
 
+// Scheduler
+Scheduler ts;
 
+void serial_commands();
+void switch_polling();
+
+// Serial task
+Task tserial(1, -1, &serial_commands, &ts, true);
+Task tswitch(10, -1, &switch_polling, &ts, true);
+
+// VFO code
 VFO vfo;
 
 void setup() {
@@ -39,8 +50,11 @@ void setup() {
   pinMode(PIN_KEYBOARD_R4, INPUT_PULLDOWN);
 
   // Outputs
-  pinMode(PIN_STM32_LED,OUTPUT);
+  pinMode(PIN_STM32_LED, OUTPUT);
   digitalWrite(PIN_STM32_LED, 1);
+  
+  pinMode(PIN_PA_FAN_ENABLE, OUTPUT);
+  digitalWrite(PIN_PA_FAN_ENABLE, 0);
 
   pinMode(PIN_KEYBOARD_C1, OUTPUT);
   pinMode(PIN_KEYBOARD_C2, OUTPUT);
@@ -55,16 +69,17 @@ void setup() {
 
   
 
-// Initialize band select object
+  // Initialize vfo object
 
   if(!vfo.begin(14250000UL))
     digitalWrite(PC13,1);
 
-
-
-
-
 }
+
+//
+// Parse an unsigned integer
+//
+
 bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
   res = 0;
   unsigned i;
@@ -80,29 +95,78 @@ bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
     return true;
 }
 
+//
+// Poll PTT and Tune switches
+//
+
+void poll_ptt_tune()
+{
+  bool ptt,tune;
+  static bool last_ptt,last_tune;
+  
+  ptt = !digitalRead(PIN_PTT);
+  tune = !digitalRead(PIN_TUNE);
+
+  if(ptt != last_ptt){
+    if(ptt){
+        vfo.ptt_set(1);
+    } else {
+        vfo.ptt_set(0);
+    }
+    last_ptt = ptt;
+
+  }
+  if(tune != last_tune){
+    if(tune){
+        vfo.ptt_set(2);
+    } else {
+        vfo.ptt_set(0);
+    }
+    last_tune = tune;
+  }
+}
 
 
-void loop() 
+//
+// Switch polling task
+//
+
+void switch_polling(){
+  poll_ptt_tune();
+}
+
+//
+// Serial commands task
+//
+
+void serial_commands() 
 
 {
+  static String buffer;
   String command;
   String arg;
-  uint32_t res;
   bool param;
+  uint32_t res;
   static uint32_t last_increment = 0;
+  
 
   if(!Serial1.available()){
     return;
   }
   // Wait for a command
-  command = Serial1.readStringUntil('\r');
-  res = res + 1;
-  if(command.length() == 0){
+  char c = Serial1.read();
+  if((c != '\r') && (buffer.length() < 16)){
+    buffer+=c;
     return;
   }
-  
-  // Get argument
+
   param = false;
+  command = buffer;
+  buffer.remove(0);
+  arg.remove(0);
+
+  // Get argument
+  
   if(command.length() > 1){
     param = true;
     arg = command.substring(1);
@@ -110,9 +174,6 @@ void loop()
     
   switch(command[0]){
   
-    
-  
-
     case 'd': // Down a small amount
       if(param && parse_uint32(arg, 1, 1000, res))
         last_increment = res;
@@ -121,7 +182,7 @@ void loop()
       Serial1.flush();
       return;
 
-    case 'f': // Frequency in MHz
+    case 'f': // Frequency in Hz
       if(param && parse_uint32(arg, 1800000, 30000000, res)){
         vfo.set_freq(res);
       }
@@ -166,3 +227,9 @@ void loop()
     }
 }
  
+ 
+
+ void loop()
+ {
+   ts.execute();
+ }
