@@ -5,37 +5,45 @@
 //
 // Pins used
 //
-// 23 GPIO's
+// 24 GPIO's
 
+// Rotary Encoder
 #define PIN_ENCODER_I PB0
 #define PIN_ENCODER_Q PB1
-#define PIN_ENCODER_SWITCH PA15
 
-#define PIN_KEYBOARD_C1 PB12
-#define PIN_KEYBOARD_C2 PB13
-#define PIN_KEYBOARD_C3 PB14
-#define PIN_KEYBOARD_C4 PB15
-#define PIN_KEYBOARD_R1 PB4
-#define PIN_KEYBOARD_R2 PB5
-#define PIN_KEYBOARD_R3 PB8
-#define PIN_KEYBOARD_R4 PB9
 
+// Keypad
+#define PIN_KEYPAD_C1 PB12
+#define PIN_KEYPAD_C2 PB13
+#define PIN_KEYPAD_C3 PB14
+#define PIN_KEYPAD_C4 PB15
+#define PIN_KEYPAD_R1 PB4
+#define PIN_KEYPAD_R2 PB5
+#define PIN_KEYPAD_R3 PB8
+#define PIN_KEYPAD_R4 PB9
+
+// Switches
 #define PIN_PTT PB10 
 #define PIN_TUNE PB11
+#define PIN_ENCODER_SWITCH PA15
 
+// I2C 
 #define PIN_I2C_SDA PB7 // I2C1
 #define PIN_I2C_SCL PB6 // I2C1
 
+// SPI Display
 #define PIN_SPI_CLK PA5 // SPI1
 #define PIN_SPI_MOSI PA7 // SPI1
 #define PIN_SPI_MISO PA6 // SPI1
-#define PIN_SPI_CS PA8
+#define PIN_SPI_CS PA8 // Display chip select
+#define PIN_SPI_A0 PA3 // A0 Command data signal
 
+// UART
 #define PIN_UART_TX PA9 // SERIAL1
 #define PIN_UART_RX PA10 // SERAIL1
 
+// Outputs
 #define PIN_PA_FAN_ENABLE PB3 
-
 #define PIN_STM32_LED PC13 // Blue pill LED.
 
 //
@@ -44,7 +52,6 @@
 // PA0
 // PA1
 // PA2
-// PA3
 // PA4  - SPI NSS
 // PA11 - USB DM
 // PA12 - USB DP

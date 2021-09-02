@@ -4,6 +4,7 @@
 #include <config.hpp>
 #include <vfo.hpp>
 #include <logger.hpp>
+#include <encoder.hpp>
 
 
 
@@ -24,12 +25,17 @@ Scheduler ts;
 void serial_commands();
 void switch_polling();
 
-// Serial task
-Task tserial(1, -1, &serial_commands, &ts, true);
-Task tswitch(10, -1, &switch_polling, &ts, true);
+// 1mS Polling tasks
+void poll_io();
+void poll_encoder();
+Task itask(1, -1, &poll_io, &ts, true);
+Task etask(1, -1, &poll_encoder, &ts, true);
+
+
 
 // VFO code
 VFO vfo;
+ENCODER encoder;
 
 void setup() {
 
@@ -44,10 +50,10 @@ void setup() {
   pinMode(PIN_ENCODER_I, INPUT_PULLUP);
   pinMode(PIN_ENCODER_Q, INPUT_PULLUP);
   pinMode(PIN_ENCODER_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_KEYBOARD_R1, INPUT_PULLDOWN);
-  pinMode(PIN_KEYBOARD_R2, INPUT_PULLDOWN);
-  pinMode(PIN_KEYBOARD_R3, INPUT_PULLDOWN);
-  pinMode(PIN_KEYBOARD_R4, INPUT_PULLDOWN);
+  pinMode(PIN_KEYPAD_R1, INPUT_PULLDOWN);
+  pinMode(PIN_KEYPAD_R2, INPUT_PULLDOWN);
+  pinMode(PIN_KEYPAD_R3, INPUT_PULLDOWN);
+  pinMode(PIN_KEYPAD_R4, INPUT_PULLDOWN);
 
   // Outputs
   pinMode(PIN_STM32_LED, OUTPUT);
@@ -56,18 +62,20 @@ void setup() {
   pinMode(PIN_PA_FAN_ENABLE, OUTPUT);
   digitalWrite(PIN_PA_FAN_ENABLE, 0);
 
-  pinMode(PIN_KEYBOARD_C1, OUTPUT);
-  pinMode(PIN_KEYBOARD_C2, OUTPUT);
-  pinMode(PIN_KEYBOARD_C3, OUTPUT);
-  pinMode(PIN_KEYBOARD_C4, OUTPUT);
+  pinMode(PIN_KEYPAD_C1, OUTPUT);
+  pinMode(PIN_KEYPAD_C2, OUTPUT);
+  pinMode(PIN_KEYPAD_C3, OUTPUT);
+  pinMode(PIN_KEYPAD_C4, OUTPUT);
   
 
   
   // Initialize serial port
   Serial1.begin(115200);
   Serial1.setTimeout(10000);
-
   
+  void encoder_interrupt_handler();
+  void encoder_callback(uint8_t event_type);
+  encoder.begin(PIN_ENCODER_I,PIN_ENCODER_Q,PIN_ENCODER_SWITCH,[] () { encoder.interrupt_handler(); }, encoder_callback);
 
   // Initialize vfo object
 
@@ -75,6 +83,27 @@ void setup() {
     digitalWrite(PC13,1);
 
 }
+
+
+//
+// Callback from encoder class
+//
+
+
+void encoder_callback(uint8_t event_type)
+{
+  if(event_type == ENCODER_EVENT_CW)
+    vfo.set_freq(vfo.get_freq()+100);
+  else if(event_type == ENCODER_EVENT_CCW)
+    vfo.set_freq(vfo.get_freq()-100);
+
+  Serial1.println(vfo.get_freq(), DEC);
+  Serial1.flush();
+}
+
+
+
+
 
 //
 // Parse an unsigned integer
@@ -95,45 +124,6 @@ bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
     return true;
 }
 
-//
-// Poll PTT and Tune switches
-//
-
-void poll_ptt_tune()
-{
-  bool ptt,tune;
-  static bool last_ptt,last_tune;
-  
-  ptt = !digitalRead(PIN_PTT);
-  tune = !digitalRead(PIN_TUNE);
-
-  if(ptt != last_ptt){
-    if(ptt){
-        vfo.ptt_set(1);
-    } else {
-        vfo.ptt_set(0);
-    }
-    last_ptt = ptt;
-
-  }
-  if(tune != last_tune){
-    if(tune){
-        vfo.ptt_set(2);
-    } else {
-        vfo.ptt_set(0);
-    }
-    last_tune = tune;
-  }
-}
-
-
-//
-// Switch polling task
-//
-
-void switch_polling(){
-  poll_ptt_tune();
-}
 
 //
 // Serial commands task
@@ -226,7 +216,63 @@ void serial_commands()
 
     }
 }
- 
+
+
+//
+// Poll PTT and Tune switches
+//
+
+void poll_switches()
+{
+  bool ptt,tune;
+  static bool last_ptt,last_tune;
+  static uint8_t ms_counter = 0;
+
+  if(ms_counter < 10)
+    ms_counter++;
+  else{ // Only check switches every 10 calls to debounce them.
+    ms_counter = 0;
+    ptt = !digitalRead(PIN_PTT);
+    tune = !digitalRead(PIN_TUNE);
+
+    if(ptt != last_ptt){
+      if(ptt){
+          vfo.ptt_set(1);
+      } else {
+          vfo.ptt_set(0);
+      }
+      last_ptt = ptt;
+
+    }
+    if(tune != last_tune){
+      if(tune){
+          vfo.ptt_set(2);
+      } else {
+          vfo.ptt_set(0);
+      }
+      last_tune = tune;
+    }
+  }
+}
+
+//
+// Encoder polling
+//
+
+void poll_encoder()
+{
+ encoder.poll();
+}
+
+//
+// I/0 polling task
+//
+
+void poll_io(){
+  poll_switches();
+  serial_commands();
+}
+
  
 
  void loop()
