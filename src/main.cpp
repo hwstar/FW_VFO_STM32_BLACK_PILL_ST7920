@@ -94,7 +94,9 @@ void setup() {
 
   // Add subscribers to the event object
   void encoder_action(event_data ed);
+  void keypad_action(event_data ed);
   event.subscribe(encoder_action,EVENT_ENCODER);
+  event.subscribe(keypad_action,EVENT_KEYPAD|EVENT_SERIAL);
 
 }
 
@@ -102,7 +104,6 @@ void setup() {
 //
 // Callback from encoder class
 //
-
 
 void encoder_callback(uint8_t event_type)
 {
@@ -144,6 +145,78 @@ bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
   else
     return true;
 }
+
+//
+// Act on keypad events
+//
+void keypad_action(event_data ed)
+{
+  char c = ed.char_val;
+  uint8_t i;
+  static uint8_t state = 0;
+  static uint8_t f_count;
+  static uint32_t m,f,vf;
+
+
+
+  switch(state){
+    case 0: // Start of parsing, first character
+      f = m = 0;
+      f_count = 0;
+      if(isdigit(c)){
+        m = (uint32_t) (c - '0');
+        state = 1;
+      }
+      break;
+
+    case 1: // Second frequency digit or decimal point
+      if(isdigit(c)){
+        m *= 10;
+        m += (uint32_t) (c - '0');
+        state = 2;
+      } else if (c == '*'){ // "Decimal point"
+        state = 3;
+        
+      } else { // Abort
+        state = 0;
+      }
+      break;
+
+    case 2: // Expect decimal point
+      if(c == '*'){
+        state = 3;
+      } else {
+        state = 0;
+      }
+      break;
+
+    case 3: // Start parsing fractional part
+      if(isdigit(c)){
+        f *= 10;
+        f += (uint32_t) (c - '0');
+      }
+      if((f_count == 6) || (c == '#')) // Check for complete frequency entry
+        if(c == '#'){ // Short entry by user
+          // Multiply by 10 accordingly
+          for(i = 0 ; i < 6 - f_count; i++){
+            f *= 10;
+          }
+        // Calculate the frequency in Hz
+        vf = (m * 1000000) + f;
+        // Set the VFO freqency
+        Serial1.println(vf);
+        vfo.set_freq(vf);
+        state = 0;
+        }
+      if(isdigit(c)){
+        f_count++;
+      } else if( c != '#') {
+        state = 0;
+      }
+  }
+
+}
+
 
 //
 // Serial commands task
