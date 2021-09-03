@@ -6,11 +6,7 @@
 #include <vfo.hpp>
 #include <logger.hpp>
 #include <encoder.hpp>
-
-
-
-
-const String version = "0.0";
+#include <event.hpp>
 
 
 
@@ -20,32 +16,37 @@ uint8_t drive_strength = 3;
 
 // Static objects
 
-// Scheduler
+// Scheduler object
 Scheduler ts;
 
 void serial_commands();
 void switch_polling();
 
 // 1mS Polling tasks
-void poll_io();
-void poll_encoder();
-void update_display();
-Task itask(1, -1, &poll_io, &ts, true);
-Task etask(1, -1, &poll_encoder, &ts, true);
-Task dtask(100, -1, &update_display, &ts, true);
+void task_poll_io();
+void task_poll_encoder();
+void task_update_display();
+Task itask(1, -1, &task_poll_io, &ts, true);
+Task etask(1, -1, &task_poll_encoder, &ts, true);
+Task dtask(100, -1, &task_update_display, &ts, true);
 
-
-
-
-// VFO code
+// Event object
+EVENT event;
+// VFO object
 VFO vfo;
+// Encoder object
 ENCODER encoder;
+// Display object
 U8G2_ST7920_128X64_1_HW_SPI st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
+
+//
+// Arduino setup function
+//
 
 void setup() {
 
 
-  // Wait for power rails to stabilize before doing anything with the Si5351
+  // Wait for power rails to stabilize before doing anything
   delay(100);
 
 
@@ -81,15 +82,19 @@ void setup() {
   // Initialize Encoder
   void encoder_interrupt_handler();
   void encoder_callback(uint8_t event_type);
-  encoder.begin(PIN_ENCODER_I,PIN_ENCODER_Q,PIN_ENCODER_SWITCH,[] () { encoder.interrupt_handler(); }, encoder_callback);
+  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, encoder_callback);
 
-  // Initialize display
+  // Initialize display object
   st7920.begin();
 
   // Initialize vfo object
 
   if(!vfo.begin(14250000UL))
     digitalWrite(PC13,1);
+
+  // Add subscribers to the event object
+  void encoder_action(event_data ed);
+  event.subscribe(encoder_action,EVENT_ENCODER);
 
 }
 
@@ -101,18 +106,25 @@ void setup() {
 
 void encoder_callback(uint8_t event_type)
 {
-  if(event_type == ENCODER_EVENT_CW)
+  event.fire(EVENT_ENCODER, event_type);
+}
+
+
+//
+// Action to perform when we get an encoder event
+//
+
+void encoder_action(event_data ed)
+{
+  if(ed.u8_val == ENCODER_EVENT_CW)
     vfo.set_freq(vfo.get_freq()+100);
-  else if(event_type == ENCODER_EVENT_CCW)
+  else if(ed.u8_val == ENCODER_EVENT_CCW)
     vfo.set_freq(vfo.get_freq()-100);
 
   Serial1.println(vfo.get_freq(), DEC);
   Serial1.flush();
+
 }
-
-
-
-
 
 //
 // Parse an unsigned integer
@@ -132,7 +144,6 @@ bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
   else
     return true;
 }
-
 
 //
 // Serial commands task
@@ -226,7 +237,6 @@ void serial_commands()
     }
 }
 
-
 //
 // Poll PTT and Tune switches
 //
@@ -236,10 +246,22 @@ void poll_switches()
   bool ptt,tune;
   static bool last_ptt,last_tune;
   static uint8_t ms_counter = 0;
+  static uint8_t active_column = 1;
+  static uint8_t row_code;
+  static uint8_t column_code;
+  static uint8_t scan_code;
+  static bool last_key_detect;
+  bool new_key_detect;
+  static const char scan_table[16] = {'1','4','7','*','2','5','8','0','3','6','9','#','A','B','C','D'};
+  
 
   if(ms_counter < 10)
     ms_counter++;
-  else{ // Only check switches every 10 calls to debounce them.
+  else 
+    ms_counter = 0;
+
+
+  if(ms_counter == 0){ // Only check switches every 10 calls to debounce them.
     ms_counter = 0;
     ptt = !digitalRead(PIN_PTT);
     tune = !digitalRead(PIN_TUNE);
@@ -251,7 +273,6 @@ void poll_switches()
           vfo.ptt_set(0);
       }
       last_ptt = ptt;
-
     }
     if(tune != last_tune){
       if(tune){
@@ -261,14 +282,78 @@ void poll_switches()
       }
       last_tune = tune;
     }
+  } else if(ms_counter == 2){ // Check the keypad
+    // Check row inputs
+    if( digitalRead(PIN_KEYPAD_R1)){
+      new_key_detect = true;
+      row_code = 0;
+    } else if( digitalRead(PIN_KEYPAD_R2)){
+      new_key_detect = true;
+      row_code = 1;
+    } else if( digitalRead(PIN_KEYPAD_R3)){
+      new_key_detect = true;
+      row_code = 2;
+    } else if( digitalRead(PIN_KEYPAD_R4)){
+      new_key_detect = true;
+      row_code = 3;
+    } else {
+       new_key_detect = false;
+    }
+    // Down transition
+    if((true == new_key_detect) && (false == last_key_detect)){
+      scan_code = (column_code << 2) + row_code;
+      last_key_detect = new_key_detect;
+    // Up transition
+    } else if((false == new_key_detect) && (true == last_key_detect)){
+      last_key_detect = new_key_detect;
+      // Fire keypad event
+      event.fire(EVENT_KEYPAD, scan_table[scan_code]);
+    }
+
+    if(!new_key_detect) { // Stop scanning when a key is pressed
+      // Select the next column
+      digitalWrite(PIN_KEYPAD_C1, 0);
+      digitalWrite(PIN_KEYPAD_C2, 0);
+      digitalWrite(PIN_KEYPAD_C3, 0);
+      digitalWrite(PIN_KEYPAD_C4, 0);
+
+      switch(active_column){
+        case 1:
+          column_code = 0;
+          digitalWrite(PIN_KEYPAD_C1, 1);
+          break;
+
+        case 2:
+          column_code = 1;
+          digitalWrite(PIN_KEYPAD_C2, 1);
+          break;
+
+        case 4:
+          column_code = 2;
+          digitalWrite(PIN_KEYPAD_C3, 1);
+          break;
+
+        case 8:
+          column_code = 3;
+          digitalWrite(PIN_KEYPAD_C4, 1);
+          break;
+      }
+      // Calculate next active column when we run again.
+      active_column <<= 1;
+      if(active_column & 0x10)
+        active_column = 1;
+    
+    }
   }
+
 }
+ 
 
 //
-// Encoder polling
+// Encoder polling task
 //
 
-void poll_encoder()
+void task_poll_encoder()
 {
  encoder.poll();
 }
@@ -277,7 +362,7 @@ void poll_encoder()
 // I/0 polling task
 //
 
-void poll_io(){
+void task_poll_io(){
   poll_switches();
   serial_commands();
 }
@@ -286,7 +371,7 @@ void poll_io(){
 // Update information on the display
 //
 
-void update_display()
+void task_update_display()
 {
   const char *mode;
   uint32_t freq = vfo.get_freq();
