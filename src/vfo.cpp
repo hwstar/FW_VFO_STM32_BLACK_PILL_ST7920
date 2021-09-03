@@ -158,12 +158,15 @@ void VFO::mode_set(uint8_t mode)
     if(is_txing)
         return;
 
+    if(MODE_DEFAULT == mode)
+        mode = band_table[band_index].usb_def; // Default for band
+
     is_usb = (bool) mode;
     update_clock_gen();
 }
 
 //
-// Get sideband
+// Get mode
 //
 
 uint8_t VFO::mode_get()
@@ -199,13 +202,15 @@ bool VFO::set_freq (uint32_t freq)
 
     vfo_freq = freq;
 
+
     // Set the band filters if a new band
     if(last_band != band_table[i].band){
         band_select.set(band_table[i].band);
         last_band = band_table[i].band;
     }
+    band_index = i;
 
-    
+
     update_clock_gen();
 
     return true;
@@ -322,6 +327,7 @@ bool VFO::begin(uint32_t init_freq)
     
     is_txing = false;
     set_freq(init_freq);
+    mode_set(MODE_DEFAULT);
     si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
 

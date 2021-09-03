@@ -93,10 +93,12 @@ void setup() {
     digitalWrite(PC13,1);
 
   // Add subscribers to the event object
-  void encoder_action(event_data ed);
-  void keypad_action(event_data ed);
-  event.subscribe(encoder_action,EVENT_ENCODER);
-  event.subscribe(keypad_action,EVENT_KEYPAD|EVENT_SERIAL);
+  void encoder_subscriber(event_data, uint8_t);
+  void keypad_subscriber(event_data, uint8_t);
+  void vfo_subscriber(event_data, uint8_t);
+  event.subscribe(encoder_subscriber, EVENT_ENCODER);
+  event.subscribe(keypad_subscriber, EVENT_KEYPAD|EVENT_SERIAL);
+  event.subscribe(vfo_subscriber, EVENT_VFO);
 
 }
 
@@ -107,7 +109,7 @@ void setup() {
 
 void encoder_callback(uint8_t event_type)
 {
-  event.fire(EVENT_ENCODER, event_type);
+  event.fire(EVENT_ENCODER, event_type, 0UL);
 }
 
 
@@ -115,11 +117,11 @@ void encoder_callback(uint8_t event_type)
 // Action to perform when we get an encoder event
 //
 
-void encoder_action(event_data ed)
+void encoder_subscriber(event_data ed, uint8_t event_subtype)
 {
-  if(ed.u8_val == ENCODER_EVENT_CW)
+  if(event_subtype == ENCODER_EVENT_CW)
     vfo.set_freq(vfo.get_freq()+100);
-  else if(ed.u8_val == ENCODER_EVENT_CCW)
+  else if(event_subtype == ENCODER_EVENT_CCW)
     vfo.set_freq(vfo.get_freq()-100);
 
   Serial1.println(vfo.get_freq(), DEC);
@@ -128,28 +130,9 @@ void encoder_action(event_data ed)
 }
 
 //
-// Parse an unsigned integer
-//
-
-bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
-  res = 0;
-  unsigned i;
-  for(i = 0; i < str.length(); i++){
-    if(!isdigit(str[i]))
-      return false;
-    res *= 10;  
-    res += (str[i] - 0x30);
-  }
-  if((res < min) || (res > max))
-    return false;
-  else
-    return true;
-}
-
-//
 // Act on keypad events
 //
-void keypad_action(event_data ed)
+void keypad_subscriber(event_data ed, uint8_t event_subtype)
 {
   char c = ed.char_val;
   uint8_t i;
@@ -204,8 +187,7 @@ void keypad_action(event_data ed)
         // Calculate the frequency in Hz
         vf = (m * 1000000) + f;
         // Set the VFO freqency
-        Serial1.println(vf);
-        vfo.set_freq(vf);
+        event.fire(EVENT_VFO, EV_SUBTYPE_SET_FREQ, vf);
         state = 0;
         }
       if(isdigit(c)){
@@ -217,6 +199,43 @@ void keypad_action(event_data ed)
 
 }
 
+//
+// Act on VFO parameter change
+//
+
+void vfo_subscriber(event_data ed, uint8_t event_subtype)
+{
+  switch(event_subtype){
+    case EV_SUBTYPE_SET_FREQ:
+      // Set frequency
+      vfo.set_freq(ed.u32_val);
+      // Set default mode for band
+      vfo.mode_set(MODE_DEFAULT);
+      break;
+    default:
+      break;
+  }
+}
+
+
+//
+// Parse an unsigned integer
+//
+
+bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
+  res = 0;
+  unsigned i;
+  for(i = 0; i < str.length(); i++){
+    if(!isdigit(str[i]))
+      return false;
+    res *= 10;  
+    res += (str[i] - 0x30);
+  }
+  if((res < min) || (res > max))
+    return false;
+  else
+    return true;
+}
 
 //
 // Serial commands task
@@ -380,7 +399,7 @@ void poll_switches()
     } else if((false == new_key_detect) && (true == last_key_detect)){
       last_key_detect = new_key_detect;
       // Fire keypad event
-      event.fire(EVENT_KEYPAD, scan_table[scan_code]);
+      event.fire(EVENT_KEYPAD, EV_SUBTYPE_NONE, scan_table[scan_code]);
     }
 
     if(!new_key_detect) { // Stop scanning when a key is pressed
@@ -458,7 +477,7 @@ void task_update_display()
   String freqall(fmhzdot+fmod);
 
 
-  if(vfo.mode_get())
+  if(vfo.mode_get() == MODE_USB)
     mode = "USB";
   else
     mode = "LSB";

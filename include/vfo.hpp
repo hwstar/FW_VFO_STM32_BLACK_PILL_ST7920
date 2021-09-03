@@ -6,6 +6,9 @@
 
 #include <bandsel.hpp>
 
+#define MODE_LSB 0
+#define MODE_USB 1
+#define MODE_DEFAULT 100
 
 class VFO
 {
@@ -31,6 +34,8 @@ class VFO
     int32_t tx_filter_offset;
     uint8_t trx_save;
     uint8_t last_ptt_mode;
+    uint8_t band_index;
+
 
     void update_clock_gen();
 };
