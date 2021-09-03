@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <TaskScheduler.h>
+#include <U8g2lib.h>
 
 #include <config.hpp>
 #include <vfo.hpp>
@@ -28,14 +29,18 @@ void switch_polling();
 // 1mS Polling tasks
 void poll_io();
 void poll_encoder();
+void update_display();
 Task itask(1, -1, &poll_io, &ts, true);
 Task etask(1, -1, &poll_encoder, &ts, true);
+Task dtask(100, -1, &update_display, &ts, true);
+
 
 
 
 // VFO code
 VFO vfo;
 ENCODER encoder;
+U8G2_ST7920_128X64_1_HW_SPI st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
 
 void setup() {
 
@@ -73,9 +78,13 @@ void setup() {
   Serial1.begin(115200);
   Serial1.setTimeout(10000);
   
+  // Initialize Encoder
   void encoder_interrupt_handler();
   void encoder_callback(uint8_t event_type);
   encoder.begin(PIN_ENCODER_I,PIN_ENCODER_Q,PIN_ENCODER_SWITCH,[] () { encoder.interrupt_handler(); }, encoder_callback);
+
+  // Initialize display
+  st7920.begin();
 
   // Initialize vfo object
 
@@ -273,8 +282,41 @@ void poll_io(){
   serial_commands();
 }
 
- 
+//
+// Update information on the display
+//
 
+void update_display()
+{
+  const char *mode;
+  uint32_t freq = vfo.get_freq();
+
+  uint32_t mhz = freq/1000000UL;
+  uint32_t modulus = freq % 1000000UL;
+
+  String fmhz(mhz);
+  String fmod(modulus);
+  String fmhzdot(fmhz + ".");
+  String freqall(fmhzdot+fmod);
+
+
+  if(vfo.mode_get())
+    mode = "USB";
+  else
+    mode = "LSB";
+
+ 
+ st7920.firstPage();
+ do {
+    /* all graphics commands have to appear within the loop body. */    
+    st7920.setFont(u8g2_font_ncenB14_tr);
+    st7920.drawStr(0, 20, freqall.c_str());
+    st7920.drawStr(0, 40, mode);
+
+  } while ( st7920.nextPage() );
+}
+
+ 
  void loop()
  {
    ts.execute();
