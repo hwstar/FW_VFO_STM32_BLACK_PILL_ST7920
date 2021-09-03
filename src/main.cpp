@@ -157,7 +157,7 @@ void keypad_subscriber(event_data ed, uint8_t event_subtype)
         m *= 10;
         m += (uint32_t) (c - '0');
         state = 2;
-      } else if (c == '*'){ // "Decimal point"
+      } else if ((c == '*')||(c == '.')){ // Decimal point or star?
         state = 3;
         
       } else { // Abort
@@ -165,8 +165,8 @@ void keypad_subscriber(event_data ed, uint8_t event_subtype)
       }
       break;
 
-    case 2: // Expect decimal point
-      if(c == '*'){
+    case 2: // Expect star or decimal point
+      if((c == '*')||(c == '.')){
         state = 3;
       } else {
         state = 0;
@@ -178,21 +178,21 @@ void keypad_subscriber(event_data ed, uint8_t event_subtype)
         f *= 10;
         f += (uint32_t) (c - '0');
       }
-      if((f_count == 6) || (c == '#')) // Check for complete frequency entry
-        if(c == '#'){ // Short entry by user
+      if((f_count == 6) || (c == '#') || (c == '\r')) // Check for complete frequency entry
+        if((c == '#')||(c == '\r')){ // Short entry by user
           // Multiply by 10 accordingly
           for(i = 0 ; i < 6 - f_count; i++){
             f *= 10;
           }
         // Calculate the frequency in Hz
         vf = (m * 1000000) + f;
-        // Set the VFO freqency
+        // Set the VFO frequency
         event.fire(EVENT_VFO, EV_SUBTYPE_SET_FREQ, vf);
         state = 0;
         }
       if(isdigit(c)){
         f_count++;
-      } else if( c != '#') {
+      } else if((c != '#')||(c == '\r')) {
         state = 0;
       }
   }
@@ -218,24 +218,7 @@ void vfo_subscriber(event_data ed, uint8_t event_subtype)
 }
 
 
-//
-// Parse an unsigned integer
-//
 
-bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
-  res = 0;
-  unsigned i;
-  for(i = 0; i < str.length(); i++){
-    if(!isdigit(str[i]))
-      return false;
-    res *= 10;  
-    res += (str[i] - 0x30);
-  }
-  if((res < min) || (res > max))
-    return false;
-  else
-    return true;
-}
 
 //
 // Serial commands task
@@ -244,90 +227,15 @@ bool parse_uint32(String str, uint32_t min, uint32_t max, uint32_t &res) {
 void serial_commands() 
 
 {
-  static String buffer;
-  String command;
-  String arg;
-  bool param;
-  uint32_t res;
-  static uint32_t last_increment = 0;
-  
-
+  char c;
+ 
   if(!Serial1.available()){
     return;
   }
-  // Wait for a command
-  char c = Serial1.read();
-  if((c != '\r') && (buffer.length() < 16)){
-    buffer+=c;
-    return;
-  }
-
-  param = false;
-  command = buffer;
-  buffer.remove(0);
-  arg.remove(0);
-
-  // Get argument
-  
-  if(command.length() > 1){
-    param = true;
-    arg = command.substring(1);
-  }
-    
-  switch(command[0]){
-  
-    case 'd': // Down a small amount
-      if(param && parse_uint32(arg, 1, 1000, res))
-        last_increment = res;
-      vfo.set_freq(vfo.get_freq()-last_increment);
-      Serial1.println(vfo.get_freq(), DEC);
-      Serial1.flush();
-      return;
-
-    case 'f': // Frequency in Hz
-      if(param && parse_uint32(arg, 1800000, 30000000, res)){
-        vfo.set_freq(res);
-      }
-      Serial1.println(vfo.get_freq(), DEC);
-      Serial1.flush();
-      return;
-  
-      break;
-    
-    case 'm':
-      if(param && parse_uint32(arg, 0, 1, res)){
-         vfo.mode_set((uint8_t) res);
-         }
-      Serial1.println(vfo.mode_get(), DEC);
-      Serial1.flush();
-      return; 
-
-    case 'r':
-      Serial1.println(vfo.get_freq(), DEC);
-      Serial1.flush();
-      return;
-
-    case 't': // Transmit enable: 2 = TX tune, 1 = TX 0 = Rx
-       if(param && parse_uint32(arg, 0, 2, res)){
-         vfo.ptt_set((uint8_t) res);
-         }
-      Serial1.println(vfo.ptt_get(), DEC);
-      Serial1.flush();
-      return;
-   
-    case 'u': // Up a small amount
-      if(param && parse_uint32(arg, 1, 1000, res))
-        last_increment = res;
-      vfo.set_freq(vfo.get_freq()+last_increment);
-      Serial1.println(vfo.get_freq(), DEC);
-      Serial1.flush();
-      return;
-
-    default:
-      return;
-
-    }
+  c = Serial1.read();
+  event.fire(EVENT_SERIAL, EV_SUBTYPE_NONE, c);
 }
+
 
 //
 // Poll PTT and Tune switches
