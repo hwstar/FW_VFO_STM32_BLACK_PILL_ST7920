@@ -27,15 +27,12 @@ void DISPLAY_DRIVER::refresh()
 {
     const char *modestr;
     const char *radiostr;
+    char freqall[20];
 
     uint32_t mhz = freq/1000000UL;
     uint32_t modulus = freq % 1000000UL;
 
-    String fmhz(mhz);
-    String fmod(modulus);
-    String fmhzdot(fmhz + ".");
-    String freqall(fmhzdot+fmod);
-
+    snprintf(freqall, 19,"%lu.%06lu", mhz, modulus);
 
     if(mode == MODE_USB)
         modestr = "USB";
@@ -60,7 +57,7 @@ void DISPLAY_DRIVER::refresh()
     do {
         /* all graphics commands have to appear within the loop body. */    
         st7920.setFont(u8g2_font_ncenB14_tr);
-        st7920.drawStr(0, 20, freqall.c_str());
+        st7920.drawStr(0, 20, freqall);
         st7920.setFont(u8g2_font_ncenB08_tr);
         st7920.drawStr(100, 20, modestr);
         st7920.drawStr(100, 60, radiostr);
