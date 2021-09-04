@@ -1,35 +1,27 @@
 #include <Arduino.h>
 #include <TaskScheduler.h>
-#include <U8g2lib.h>
+
 
 #include <config.hpp>
 #include <vfo.hpp>
 #include <logger.hpp>
 #include <encoder.hpp>
 #include <event.hpp>
+#include <display.hpp>
 
 
 
-
-uint8_t output_num = 0;
-uint8_t drive_strength = 3;
-
-
-// Static objects
 
 // Scheduler object
 Scheduler ts;
 
-void serial_commands();
-void switch_polling();
-
-// 1mS Polling tasks
+// Polling tasks
 void task_poll_io();
 void task_poll_encoder();
-void task_update_display();
+void task_refresh_display();
 Task itask(1, -1, &task_poll_io, &ts, true);
 Task etask(1, -1, &task_poll_encoder, &ts, true);
-Task dtask(100, -1, &task_update_display, &ts, true);
+Task dtask(100, -1, &task_refresh_display, &ts, true);
 
 // Event object
 EVENT event;
@@ -38,7 +30,8 @@ VFO vfo;
 // Encoder object
 ENCODER encoder;
 // Display object
-U8G2_ST7920_128X64_1_HW_SPI st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
+DISPLAY_DRIVER display;
+
 
 //
 // Arduino setup function
@@ -86,20 +79,26 @@ void setup() {
   encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, encoder_callback);
 
   // Initialize display object
-  st7920.begin();
-
-  // Initialize vfo object
-
-  if(!vfo.begin(14250000UL))
-    digitalWrite(PC13,1);
+  display.begin();
 
   // Add subscribers to the event object
   void encoder_subscriber(event_data, uint8_t);
   void keypad_subscriber(event_data, uint8_t);
   void vfo_subscriber(event_data, uint8_t);
+  void display_subscriber(event_data, uint8_t);
+  void serial_output_subscriber(event_data, uint8_t );
   event.subscribe(encoder_subscriber, EVENT_ENCODER);
   event.subscribe(keypad_subscriber, EVENT_KEYPAD|EVENT_SERIAL);
   event.subscribe(vfo_subscriber, EVENT_VFO);
+  event.subscribe(display_subscriber, EVENT_DISPLAY);
+  event.subscribe(serial_output_subscriber, EVENT_DISPLAY);
+  
+  // Initialize vfo object
+  // Events must be initialzed first for default freqency and mode to be displayed.
+  void vfo_fire_event(uint32_t event_type, uint8_t event_subtype, event_data ed);
+  if(!vfo.begin(14250000UL, vfo_fire_event))
+    digitalWrite(PC13,1);
+
 
 }
 
@@ -124,10 +123,6 @@ void encoder_subscriber(event_data ed, uint8_t event_subtype)
     vfo.set_freq(vfo.get_freq()+100);
   else if(event_subtype == ENCODER_EVENT_CCW)
     vfo.set_freq(vfo.get_freq()-100);
-
-  Serial1.println(vfo.get_freq(), DEC);
-  Serial1.flush();
-
 }
 
 //
@@ -201,6 +196,16 @@ void keypad_subscriber(event_data ed, uint8_t event_subtype)
 }
 
 //
+// Fire an event from the VFO
+// This is used to update fields on the display after the VFO object validates them
+//
+
+void vfo_fire_event(uint32_t event_type, uint8_t event_subtype, event_data ed){
+    event.fire(event_type, event_subtype, ed);
+
+}
+
+//
 // Act on VFO parameter change
 //
 
@@ -218,8 +223,33 @@ void vfo_subscriber(event_data ed, uint8_t event_subtype)
   }
 }
 
+//
+// Act on display event
+//
+
+void display_subscriber(event_data ed, uint8_t event_subtype)
+{
+  display.events(ed, event_subtype);
+}
 
 
+void serial_output_subscriber(event_data ed, uint8_t event_subtype)
+{
+  switch(event_subtype){
+      case EV_SUBTYPE_SET_FREQ:
+        Serial1.printf("F:%lu\r\n", ed.u32_val);
+        break;
+      case EV_SUBTYPE_SET_MODE:
+        Serial1.printf("M:%u\r\n", ed.u8_val);
+        break;
+      case EV_SUBTYPE_TX_MODE:
+        Serial1.printf("T:%u\r\n", ed.u8_val);
+        break;
+
+      default:
+        break;
+  }
+}
 
 //
 // Serial commands task
@@ -271,15 +301,15 @@ void poll_switches()
       if(ptt){
           vfo.ptt_set(1);
       } else {
-          vfo.ptt_set(0);
+          vfo.ptt_set(RADIO_RX);
       }
       last_ptt = ptt;
     }
     if(tune != last_tune){
       if(tune){
-          vfo.ptt_set(2);
+          vfo.ptt_set(RADIO_TUNE);
       } else {
-          vfo.ptt_set(0);
+          vfo.ptt_set(RADIO_RX);
       }
       last_tune = tune;
     }
@@ -369,36 +399,12 @@ void task_poll_io(){
 }
 
 //
-// Update information on the display
+// Refresh display
 //
 
-void task_update_display()
+void task_refresh_display()
 {
-  const char *mode;
-  uint32_t freq = vfo.get_freq();
-
-  uint32_t mhz = freq/1000000UL;
-  uint32_t modulus = freq % 1000000UL;
-
-  String fmhz(mhz);
-  String fmod(modulus);
-  String fmhzdot(fmhz + ".");
-  String freqall(fmhzdot+fmod);
-
-
-  if(vfo.mode_get() == MODE_USB)
-    mode = "USB";
-  else
-    mode = "LSB";
-
- 
- st7920.firstPage();
- do {
-    /* all graphics commands have to appear within the loop body. */    
-    st7920.setFont(u8g2_font_ncenB14_tr);
-    st7920.drawStr(0, 20, freqall.c_str());
-    st7920.drawStr(0, 40, mode);
-    } while ( st7920.nextPage() );
+  display.refresh();
 }
 
  

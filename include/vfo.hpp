@@ -5,16 +5,15 @@
 #ifndef __VFO_HPP__
 
 #include <bandsel.hpp>
+#include <config.hpp>
+#include <event.hpp>
 
-#define MODE_LSB 0
-#define MODE_USB 1
-#define MODE_DEFAULT 100
 
 class VFO
 {
     public:
     
-    bool begin(uint32_t init_freq = 14150000UL);
+    bool begin(uint32_t init_freq = 14250000UL, void (*event_callback)(uint32_t, uint8_t, event_data) = NULL);
     bool set_freq (uint32_t freq);
     uint32_t get_freq();
     void ptt_set(uint8_t mode);
@@ -25,7 +24,6 @@ class VFO
     private:
     bool is_usb;
     bool is_txing;
-
     BANDS last_band;
     uint32_t vfo_freq;
     uint32_t high_injection_freq;
@@ -36,8 +34,11 @@ class VFO
     uint8_t last_ptt_mode;
     uint8_t band_index;
 
+    void (*_event_callback)(uint32_t, uint8_t, event_data );
+
 
     void update_clock_gen();
+    void update_display_tx(uint8_t val);
 };
 
 #define __VFO_HPP__

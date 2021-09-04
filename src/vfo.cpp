@@ -104,6 +104,19 @@ void VFO::update_clock_gen()
 }
 
 //
+// Update the display showing the TX state
+//
+
+void VFO::update_display_tx(uint8_t mode)
+{
+    if(_event_callback != NULL){
+        event_data ed;
+        ed.u8_val = mode;
+        (*_event_callback)(EVENT_DISPLAY, EV_SUBTYPE_TX_MODE, ed);
+    }
+}
+
+//
 // Get current vfo frequency
 //
 
@@ -120,15 +133,15 @@ void VFO::ptt_set(uint8_t mode)
 {
     static uint16_t ptt_count;
 
-    if(0 == mode){
+    if(RADIO_RX == mode){
         is_txing = false;
         last_ptt_mode = mode;
         trx_save &= ~(TRX_ENA_TUNE_OSC | TRX_PTT);
     }
-    else if (1 == mode){
+    else if (RADIO_TX == mode){
         last_ptt_mode = mode;
         is_txing = true;
-        trx_save &= ~( TRX_ENA_TUNE_OSC);
+        trx_save &= ~(TRX_ENA_TUNE_OSC);
         trx_save |= (TRX_PTT);
     }
     else{
@@ -138,6 +151,11 @@ void VFO::ptt_set(uint8_t mode)
     }
     update_clock_gen();
     trx.write(trx_save);
+
+    // Fire event to update PTT mode
+    update_display_tx(mode);
+    
+
     // Breakpoint
     ptt_count++;
 }
@@ -163,6 +181,14 @@ void VFO::mode_set(uint8_t mode)
 
     is_usb = (bool) mode;
     update_clock_gen();
+
+    // Fire display event to update mode
+
+    if(_event_callback){
+        event_data ed;
+        ed.u8_val = mode;
+        (*_event_callback)(EVENT_DISPLAY, EV_SUBTYPE_SET_MODE, ed);
+    }
 }
 
 //
@@ -213,6 +239,14 @@ bool VFO::set_freq (uint32_t freq)
 
     update_clock_gen();
 
+    // Fire display event to update frequency
+    if(_event_callback != NULL){
+        event_data ed;
+        ed.u32_val = freq;
+        (*_event_callback)(EVENT_DISPLAY, EV_SUBTYPE_SET_FREQ, ed);
+    }
+
+
     return true;
 }
 
@@ -221,11 +255,14 @@ bool VFO::set_freq (uint32_t freq)
 // Initialize VFO
 //
 
-bool VFO::begin(uint32_t init_freq) 
+bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, event_data)) 
 {
     digitalWrite(PIN_STM32_LED,1); // LED off
 
     uint8_t i;
+
+    // Save callback function address
+    _event_callback = event_callback;
 
 
     // SI5351 library calls Wire.begin, so it has to be the first thing initialized
@@ -326,6 +363,7 @@ bool VFO::begin(uint32_t init_freq)
     bfo_carrier_freq = CARRIER_OSC_FREQ;
     
     is_txing = false;
+    update_display_tx(is_txing);
     set_freq(init_freq);
     mode_set(MODE_DEFAULT);
     si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);

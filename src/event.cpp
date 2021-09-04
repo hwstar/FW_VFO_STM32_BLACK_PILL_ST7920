@@ -34,7 +34,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char value)
 {
     event_data ed;
     ed.char_val = value;
-    _fire(event_type, event_subtype, ed);
+    fire(event_type, event_subtype, ed);
     
 
 }
@@ -47,7 +47,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, uint8_t value)
 {
     event_data ed;
     ed.u8_val = value;
-    _fire(event_type, event_subtype, ed);
+    fire(event_type, event_subtype, ed);
     
 }
 
@@ -59,15 +59,15 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, uint32_t value)
 {
     event_data ed;
     ed.u32_val = value;
-    _fire(event_type, event_subtype, ed);
+    fire(event_type, event_subtype, ed);
 
 }
 
 //
-// Private fire function
+// Generic fire function
 //
 
-void EVENT::_fire(uint32_t event_type, uint8_t event_subtype, event_data ed)
+void EVENT::fire(uint32_t event_type, uint8_t event_subtype, event_data ed)
 {
     uint8_t i;
 

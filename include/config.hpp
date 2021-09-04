@@ -60,6 +60,17 @@
 // 
 
 
+// Emission modes
+
+#define MODE_LSB 0
+#define MODE_USB 1
+#define MODE_DEFAULT 100
+
+// Radio modes
+#define RADIO_RX 0
+#define RADIO_TX 1
+#define RADIO_TUNE 2
+
 // Clock Source Calibration value
 // From Clock source calibration Records
 #define CLK_SOURCE_CAL_VALUE -4440

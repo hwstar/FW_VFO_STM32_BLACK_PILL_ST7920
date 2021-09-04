@@ -6,11 +6,13 @@
 #define EVENT_ENCODER 0x00000004
 #define EVENT_PTT  0x00000008
 #define EVENT_VFO  0x00000010
+#define EVENT_DISPLAY 0x00000020
 
 #define EV_SUBTYPE_NONE 0
 #define EV_SUBTYPE_SET_FREQ 1
 #define EV_SUBTYPE_SET_INCR 2
-
+#define EV_SUBTYPE_SET_MODE 11
+#define EV_SUBTYPE_TX_MODE 12
 
 #define MAX_SUBS 32
 
@@ -34,11 +36,12 @@ class EVENT
     void fire(uint32_t event_type, uint8_t event_subtype, uint8_t value = 0);
     void fire(uint32_t event_type, uint8_t event_subtype, char value = 0);
     void fire(uint32_t event_type, uint8_t event_subtype, uint32_t value = 0);
+    void fire(uint32_t event_type, uint8_t event_subtype, event_data ed);
 
     bool subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filter = EVENT_ALL);
 
     private:
-    void _fire(uint32_t event_type, uint8_t event_subtype, event_data ed);
+   
     event_table et[MAX_SUBS];
     uint8_t num_subs;
 };
