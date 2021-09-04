@@ -201,6 +201,16 @@ uint8_t VFO::mode_get()
 
 }
 
+//
+// Get tuning knob increment
+//
+
+uint32_t VFO::incr_get()
+{
+    return tuning_knob_increment;
+}
+
+
 
 //
 // Set VFO frequency
@@ -248,6 +258,45 @@ bool VFO::set_freq (uint32_t freq)
 
 
     return true;
+}
+
+//
+// VFO event subscriber
+//
+
+void VFO::subscriber(event_data ed, uint8_t event_subtype )
+{
+    switch(event_subtype){
+        case EV_SUBTYPE_TUNE_CW:
+            set_freq(get_freq() + tuning_knob_increment);
+            break;
+        case EV_SUBTYPE_TUNE_CCW:
+            set_freq(get_freq() - tuning_knob_increment);
+            break;
+        case EV_SUBTYPE_SET_FREQ:
+            set_freq(ed.u32_val);
+            mode_set(MODE_DEFAULT); // Set default for band
+            break;
+        case EV_SUBTYPE_SET_MODE:
+            mode_set(ed.u8_val);
+            break;
+        case EV_SUBTYPE_PTT_PRESSED:
+            ptt_set(RADIO_TX);
+            break;
+        case EV_SUBTYPE_PTT_RELEASED:
+            ptt_set(RADIO_RX);
+            break;
+        case EV_SUBTYPE_TUNE_PRESSED:
+            ptt_set(RADIO_TUNE);
+            break;
+        case EV_SUBTYPE_TUNE_RELEASED:
+            ptt_set(RADIO_RX);
+            break;
+        case EV_SUBTYPE_SET_INCR:
+            tuning_knob_increment = ed.u32_val;
+            break;
+
+    }
 }
 
 
@@ -362,6 +411,7 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
 
     bfo_carrier_freq = CARRIER_OSC_FREQ;
     
+    tuning_knob_increment = 100UL;
     is_txing = false;
     update_display_tx(is_txing);
     set_freq(init_freq);
@@ -370,7 +420,7 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
 
 
-    digitalWrite(PIN_STM32_LED,0); // LED on
+    digitalWrite(PIN_STM32_LED, 0); // LED on
 
     return true;
 

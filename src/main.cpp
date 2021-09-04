@@ -83,11 +83,13 @@ void setup() {
 
   // Add subscribers to the event object
   void encoder_subscriber(event_data, uint8_t);
+  void switch_subscriber(event_data, uint8_t);
   void keypad_subscriber(event_data, uint8_t);
   void vfo_subscriber(event_data, uint8_t);
   void display_subscriber(event_data, uint8_t);
   void serial_output_subscriber(event_data, uint8_t );
   event.subscribe(encoder_subscriber, EVENT_ENCODER);
+  event.subscribe(switch_subscriber, EVENT_SWITCH);
   event.subscribe(keypad_subscriber, EVENT_KEYPAD|EVENT_SERIAL);
   event.subscribe(vfo_subscriber, EVENT_VFO);
   event.subscribe(display_subscriber, EVENT_DISPLAY);
@@ -119,11 +121,39 @@ void encoder_callback(uint8_t event_type)
 
 void encoder_subscriber(event_data ed, uint8_t event_subtype)
 {
+
   if(event_subtype == ENCODER_EVENT_CW)
-    vfo.set_freq(vfo.get_freq()+100);
+    event.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CW, 0UL);
   else if(event_subtype == ENCODER_EVENT_CCW)
-    vfo.set_freq(vfo.get_freq()-100);
+    event.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CCW, 0UL);
 }
+
+//
+// Action when a switch is pressed
+//
+
+void switch_subscriber(event_data ed, uint8_t event_subtype)
+{
+  uint32_t new_incr;
+  uint32_t curr_incr;
+  switch(event_subtype) {
+    case EV_SUBTYPE_ENCODER_PRESSED:
+      // Select VFO increment locally instead of putting this code in the VFO class.
+      curr_incr = vfo.incr_get();
+      if(curr_incr == 100UL)
+        new_incr = 1000UL;
+      else
+        new_incr = 100UL;
+      event.fire(EVENT_VFO, EV_SUBTYPE_SET_INCR, new_incr);
+
+    default:
+      break;
+  }
+
+}
+
+
+
 
 //
 // Act on keypad events
@@ -211,16 +241,7 @@ void vfo_fire_event(uint32_t event_type, uint8_t event_subtype, event_data ed){
 
 void vfo_subscriber(event_data ed, uint8_t event_subtype)
 {
-  switch(event_subtype){
-    case EV_SUBTYPE_SET_FREQ:
-      // Set frequency
-      vfo.set_freq(ed.u32_val);
-      // Set default mode for band
-      vfo.mode_set(MODE_DEFAULT);
-      break;
-    default:
-      break;
-  }
+    vfo.subscriber(ed, event_subtype);
 }
 
 //
@@ -274,8 +295,8 @@ void serial_commands()
 
 void poll_switches()
 {
-  bool ptt,tune;
-  static bool last_ptt,last_tune;
+  bool ptt,tune, encoder_switch;
+  static bool last_ptt,last_tune, last_encoder_switch;
   static uint8_t ms_counter = 0;
   static uint8_t active_column = 1;
   static uint8_t row_code;
@@ -296,23 +317,24 @@ void poll_switches()
     ms_counter = 0;
     ptt = !digitalRead(PIN_PTT);
     tune = !digitalRead(PIN_TUNE);
+    encoder_switch = !digitalRead(PIN_ENCODER_SWITCH);
+
 
     if(ptt != last_ptt){
-      if(ptt){
-          vfo.ptt_set(1);
-      } else {
-          vfo.ptt_set(RADIO_RX);
-      }
+      event.fire(EVENT_VFO, (ptt) ? EV_SUBTYPE_PTT_PRESSED : EV_SUBTYPE_PTT_RELEASED, 0UL);
       last_ptt = ptt;
     }
     if(tune != last_tune){
-      if(tune){
-          vfo.ptt_set(RADIO_TUNE);
-      } else {
-          vfo.ptt_set(RADIO_RX);
-      }
+      event.fire(EVENT_VFO, (tune) ? EV_SUBTYPE_TUNE_PRESSED : EV_SUBTYPE_TUNE_RELEASED, 0UL);
       last_tune = tune;
     }
+    if(encoder_switch != last_encoder_switch){
+      event.fire(EVENT_SWITCH, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), 0UL);
+      last_encoder_switch = encoder_switch;
+    }
+
+
+
   } else if(ms_counter == 2){ // Check the keypad
     // Check row inputs
     if( digitalRead(PIN_KEYPAD_R1)){

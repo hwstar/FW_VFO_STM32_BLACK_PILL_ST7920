@@ -14,12 +14,13 @@ class VFO
     public:
     
     bool begin(uint32_t init_freq = 14250000UL, void (*event_callback)(uint32_t, uint8_t, event_data) = NULL);
-    bool set_freq (uint32_t freq);
-    uint32_t get_freq();
-    void ptt_set(uint8_t mode);
+    uint32_t get_freq(); 
     uint8_t ptt_get();
-    void mode_set(uint8_t mode);
     uint8_t mode_get();
+    uint32_t incr_get(); 
+
+    void subscriber(event_data ed, uint8_t event_subtype);
+
 
     private:
     bool is_usb;
@@ -29,6 +30,7 @@ class VFO
     uint32_t high_injection_freq;
     uint32_t low_injection_freq;
     uint32_t bfo_carrier_freq;
+    uint32_t tuning_knob_increment;
     int32_t tx_filter_offset;
     uint8_t trx_save;
     uint8_t last_ptt_mode;
@@ -39,6 +41,9 @@ class VFO
 
     void update_clock_gen();
     void update_display_tx(uint8_t val);
+    bool set_freq (uint32_t freq); 
+    void ptt_set(uint8_t mode);
+    void mode_set(uint8_t mode);
 };
 
 #define __VFO_HPP__
