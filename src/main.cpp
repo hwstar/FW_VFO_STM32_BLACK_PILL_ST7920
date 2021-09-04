@@ -14,6 +14,7 @@
 uint8_t output_num = 0;
 uint8_t drive_strength = 3;
 
+
 // Static objects
 
 // Scheduler object
@@ -397,8 +398,7 @@ void task_update_display()
     st7920.setFont(u8g2_font_ncenB14_tr);
     st7920.drawStr(0, 20, freqall.c_str());
     st7920.drawStr(0, 40, mode);
-
-  } while ( st7920.nextPage() );
+    } while ( st7920.nextPage() );
 }
 
  

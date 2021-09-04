@@ -38,9 +38,8 @@ class EVENT
     bool subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filter = EVENT_ALL);
 
     private:
-    void _fire(uint32_t event_type, uint8_t event_subtype);
+    void _fire(uint32_t event_type, uint8_t event_subtype, event_data ed);
     event_table et[MAX_SUBS];
-    event_data ed;
     uint8_t num_subs;
 };
 
