@@ -22,6 +22,7 @@
 #define EV_SUBTYPE_TX_MODE 10
 #define EV_SUBTYPE_TUNE_CW 11
 #define EV_SUBTYPE_TUNE_CCW 12
+#define EV_SUBTYPE_KEYPAD_ENTRY 13
 
 
 #define MAX_SUBS 32
@@ -30,6 +31,7 @@ typedef union event_data {
     uint8_t u8_val;
     char char_val;
     uint32_t u32_val;
+    char *cp;
 } event_data;
 
 typedef struct event_table {

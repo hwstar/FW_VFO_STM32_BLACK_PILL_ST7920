@@ -161,12 +161,13 @@ void switch_subscriber(event_data ed, uint8_t event_subtype)
 void keypad_subscriber(event_data ed, uint8_t event_subtype)
 {
   char c = ed.char_val;
+  event_data k_ed;
   uint8_t i;
+  static uint8_t keypad_digits_index;
   static uint8_t state = 0;
   static uint8_t f_count;
   static uint32_t m,f,vf;
-
-
+  static char keypad_digits[12];
 
   switch(state){
     case 0: // Start of parsing, first character
@@ -223,6 +224,21 @@ void keypad_subscriber(event_data ed, uint8_t event_subtype)
       }
   }
 
+  //
+  // This code handles echoing the keypad digits to the display
+  //
+
+  if(state != 0){
+    if( keypad_digits_index < sizeof(keypad_digits) - 1){}
+      keypad_digits[keypad_digits_index++] = c;
+      k_ed.cp = keypad_digits;
+  } else {
+    // Done or error
+    memset(keypad_digits, 0, sizeof(keypad_digits));
+    keypad_digits_index = 0;
+    k_ed.cp = NULL;
+  }
+  event.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
 }
 
 //

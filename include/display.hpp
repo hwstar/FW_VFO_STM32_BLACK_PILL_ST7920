@@ -14,6 +14,7 @@ class DISPLAY_DRIVER
     uint32_t freq;
     uint8_t mode;
     uint8_t tx_mode;
+    char *keypad_keys;
     
     
 };
