@@ -1,14 +1,136 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
+#include <SPI.h>
+
+extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, U8X8_UNUSED void *arg_ptr);
+
+
+//
+//
+// Define custome U8G2 class to use delay callback ro fix ST7920 display artifacts
+//
+//
+
+class U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL : public U8G2 {
+  public: U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL(const u8g2_cb_t *rotation, uint8_t cs, uint8_t reset = U8X8_PIN_NONE) : U8G2() {
+    u8g2_Setup_st7920_s_128x64_1(&u8g2, rotation, u8x8_byte_arduino_hw_spi, u8x8_gpio_and_delay_stm32f411_black_pill);
+    u8x8_SetPin_ST7920_HW_SPI(getU8x8(), cs, reset);
+  }
+};
 
 #include <config.hpp>
 #include <display.hpp>
 #include <event.hpp>
 
+//
+// STM32F411 GPIO and Delay Callback
+//
+
+extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, U8X8_UNUSED void *arg_ptr)
+{
+  uint8_t i;
+  switch(msg)
+  {
+    case U8X8_MSG_GPIO_AND_DELAY_INIT:
+    
+      for( i = 0; i < U8X8_PIN_CNT; i++ )
+	if ( u8x8->pins[i] != U8X8_PIN_NONE )
+	{
+	  if ( i < U8X8_PIN_OUTPUT_CNT )
+	  {
+	    pinMode(u8x8->pins[i], OUTPUT);
+	  }
+	  else
+	  {
+#ifdef INPUT_PULLUP
+	    pinMode(u8x8->pins[i], INPUT_PULLUP);
+#else
+	    pinMode(u8x8->pins[i], OUTPUT);
+	    digitalWrite(u8x8->pins[i], 1);
+#endif 
+	  }
+	}
+	  
+      break;
+
+#ifndef __AVR__	
+    /* this case is not compiled for any AVR, because AVR uC are so slow */
+    /* that this delay does not matter */
+    case U8X8_MSG_DELAY_NANO:
+      //delayMicroseconds(arg_int==0?0:1);
+      delayMicroseconds(5); // Had to add this small delay for STM32F411 black pill to display without artifacts on ST7920
+      break;
+#endif
+    
+    case U8X8_MSG_DELAY_10MICRO:
+      /* not used at the moment */
+      break;
+    
+    case U8X8_MSG_DELAY_100NANO:
+      /* not used at the moment */
+      break;
+   
+    case U8X8_MSG_DELAY_MILLI:
+      delay(arg_int);
+      break;
+    case U8X8_MSG_DELAY_I2C:
+      /* arg_int is 1 or 4: 100KHz (5us) or 400KHz (1.25us) */
+      delayMicroseconds(arg_int<=2?5:2);
+      break;
+    case U8X8_MSG_GPIO_I2C_CLOCK:
+    case U8X8_MSG_GPIO_I2C_DATA:
+      if ( arg_int == 0 )
+      {
+	pinMode(u8x8_GetPinValue(u8x8, msg), OUTPUT);
+	digitalWrite(u8x8_GetPinValue(u8x8, msg), 0);
+      }
+      else
+      {
+#ifdef INPUT_PULLUP
+	pinMode(u8x8_GetPinValue(u8x8, msg), INPUT_PULLUP);
+#else
+	pinMode(u8x8_GetPinValue(u8x8, msg), OUTPUT);
+	digitalWrite(u8x8_GetPinValue(u8x8, msg), 1);
+#endif 
+      }
+      break;
+    default:
+      if ( msg >= U8X8_MSG_GPIO(0) )
+      {
+	i = u8x8_GetPinValue(u8x8, msg);
+	if ( i != U8X8_PIN_NONE )
+	{
+	  if ( u8x8_GetPinIndex(u8x8, msg) < U8X8_PIN_OUTPUT_CNT )
+	  {
+	    digitalWrite(i, arg_int);
+	  }
+	  else
+	  {
+	    if ( u8x8_GetPinIndex(u8x8, msg) == U8X8_PIN_OUTPUT_CNT )
+	    {
+	      // call yield() for the first pin only, u8x8 will always request all the pins, so this should be ok
+	      yield();
+	    }
+	    u8x8_SetGPIOResult(u8x8, digitalRead(i) == 0 ? 0 : 1);
+	  }
+	}
+	break;
+      }
+      
+      return 0;
+  }
+  return 1;
+}
 
 
-U8G2_ST7920_128X64_1_HW_SPI st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
 
+
+
+
+
+//U8G2_ST7920_128X64_1_HW_SPI st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
+U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
+//U8G2_ST7920_128X64_1_SW_SPI st7920(U8G2_R0, PIN_SPI_CLK, PIN_SPI_MOSI, PIN_SPI_CS);
 //
 // Initialize the display
 //

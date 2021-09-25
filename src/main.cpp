@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
 #include <TaskScheduler.h>
 
 
@@ -37,13 +39,14 @@ DISPLAY_DRIVER display;
 // Arduino setup function
 //
 
-void setup() {
+void setup() 
+{
 
 
   // Wait for power rails to stabilize before doing anything
-  delay(100);
+  
 
-
+ 
   // INPUTS
   pinMode(PIN_PTT, INPUT_PULLUP);
   pinMode(PIN_TUNE, INPUT_PULLUP);
@@ -57,7 +60,7 @@ void setup() {
 
   // Outputs
   pinMode(PIN_STM32_LED, OUTPUT);
-  digitalWrite(PIN_STM32_LED, 1);
+  digitalWrite(PIN_STM32_LED, 0);
   
   pinMode(PIN_PA_FAN_ENABLE, OUTPUT);
   digitalWrite(PIN_PA_FAN_ENABLE, 0);
@@ -66,12 +69,31 @@ void setup() {
   pinMode(PIN_KEYPAD_C2, OUTPUT);
   pinMode(PIN_KEYPAD_C3, OUTPUT);
   pinMode(PIN_KEYPAD_C4, OUTPUT);
+
+ // Peripheral pin mux setup
+
+  Wire.setSCL(PIN_I2C_SCL); 
+  Wire.setSDA(PIN_I2C_SDA); 
+
+  SPI.setSCLK(PIN_SPI_CLK);
+  SPI.setMOSI(PIN_SPI_MOSI);
+  SPI.setMISO(PIN_SPI_MISO);
+
+  Serial.setRx(PIN_UART_RX);
+  Serial.setTx(PIN_UART_TX);
+
+
+
+  
+  digitalWrite(PIN_STM32_LED, 1);
+
   
 
   
   // Initialize serial port
   Serial1.begin(115200);
   Serial1.setTimeout(10000);
+  Serial1.println("POR");
   
   // Initialize Encoder
   void encoder_interrupt_handler();

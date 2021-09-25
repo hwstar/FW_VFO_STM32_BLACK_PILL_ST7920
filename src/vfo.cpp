@@ -316,8 +316,10 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
 
     // SI5351 library calls Wire.begin, so it has to be the first thing initialized
 
+
     if(!si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
         logger.error(ERR_NO_CLK_GEN);
+       
         return false;
     }
 

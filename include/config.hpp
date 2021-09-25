@@ -24,8 +24,8 @@
 
 // Switches
 #define PIN_PTT PB10 
-#define PIN_TUNE PB11
-#define PIN_ENCODER_SWITCH PA15
+#define PIN_TUNE PA1
+#define PIN_ENCODER_SWITCH PB2
 
 // I2C 
 #define PIN_I2C_SDA PB7 // I2C1
@@ -50,13 +50,10 @@
 // Unused pins
 // 
 // PA0
-// PA1
 // PA2
-// PA4  - SPI NSS
+// PA4  
 // PA11 - USB DM
 // PA12 - USB DP
-// PC14
-// PC15
 // 
 
 
