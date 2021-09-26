@@ -1,13 +1,24 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <SPI.h>
+#include <config.hpp>
+#include <event.hpp>
+#include <display.hpp>
+
+/******************************************
+* Definitions
+******************************************/
+
+//
+// Custom delay callback
+//
 
 extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, U8X8_UNUSED void *arg_ptr);
 
 
 //
 //
-// Define custome U8G2 class to use delay callback ro fix ST7920 display artifacts
+// Define custome U8G2 class to use delay callback to fix ST7920 display artifacts
 //
 //
 
@@ -18,9 +29,21 @@ class U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL : public U8G2 {
   }
 };
 
-#include <config.hpp>
-#include <display.hpp>
-#include <event.hpp>
+/******************************************
+* Variables
+******************************************/
+
+//
+// U8G2 Display class instantiation
+//
+U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
+
+
+/******************************************
+* Start of code
+******************************************/
+
+
 
 //
 // STM32F411 GPIO and Delay Callback
@@ -124,13 +147,6 @@ extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_
 
 
 
-
-
-
-
-//U8G2_ST7920_128X64_1_HW_SPI st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
-U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
-//U8G2_ST7920_128X64_1_SW_SPI st7920(U8G2_R0, PIN_SPI_CLK, PIN_SPI_MOSI, PIN_SPI_CS);
 //
 // Initialize the display
 //
@@ -159,6 +175,8 @@ void DISPLAY_DRIVER::refresh()
     uint32_t mhz = freq/1000000UL;
     uint32_t modulus = freq % 1000000UL;
 
+    // Convert variables to be displayed to strings
+
     strncpy(line40, (keypad_keys && keypad_keys[0]) ? keypad_keys : clear12, sizeof(line40) - 1) ;
 
     snprintf(freqall, sizeof(freqall) - 1,"%lu.%06lu", mhz, modulus);
@@ -182,6 +200,8 @@ void DISPLAY_DRIVER::refresh()
             radiostr = "";
     }
 
+    // Update the display
+
     st7920.firstPage();
     do {
         /* all graphics commands have to appear within the loop body. */    
@@ -196,7 +216,7 @@ void DISPLAY_DRIVER::refresh()
 }
 
 //
-// Called when there is something to update
+// Called from event.cpp when there is something to update
 //
 
 void DISPLAY_DRIVER::events(event_data ed, uint8_t event_subtype)

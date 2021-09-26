@@ -1,5 +1,4 @@
 #ifndef __ENCODER_HPP__
-#include <Arduino.h>
 
 #define ENCODER_EVENT_CW 1
 #define ENCODER_EVENT_CCW 2

@@ -1,5 +1,4 @@
 #ifndef __PCA9554_HPP__
-#include <Arduino.h>
 
 
 class PCA9554

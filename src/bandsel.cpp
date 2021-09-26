@@ -1,8 +1,9 @@
   //
   // BPF and LPF band select class implementation
   //
+  #include <Arduino.h>
   
-
+  #include <config.hpp>
   #include <bandsel.hpp>
   #include <logger.hpp>
 

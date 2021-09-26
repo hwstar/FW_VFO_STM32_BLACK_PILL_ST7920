@@ -1,7 +1,7 @@
 #ifndef __DISPLAY_HPP__
-#include <Arduino.h>
-#include <U8g2lib.h>
-#include <event.hpp>
+//#include <Arduino.h>
+//#include <U8g2lib.h>
+//#include <event.hpp>
 
 class DISPLAY_DRIVER
 {

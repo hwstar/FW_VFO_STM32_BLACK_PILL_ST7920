@@ -5,11 +5,11 @@
 
 
 #include <config.hpp>
-#include <vfo.hpp>
 #include <logger.hpp>
 #include <encoder.hpp>
 #include <event.hpp>
 #include <display.hpp>
+#include <vfo.hpp>
 
 
 
@@ -22,7 +22,6 @@ void task_poll_io();
 void task_poll_encoder();
 void task_refresh_display();
 Task itask(1, -1, &task_poll_io, &ts, true);
-Task etask(1, -1, &task_poll_encoder, &ts, true);
 Task dtask(100, -1, &task_refresh_display, &ts, true);
 
 // Event object
@@ -42,10 +41,6 @@ DISPLAY_DRIVER display;
 void setup() 
 {
 
-
-  // Wait for power rails to stabilize before doing anything
-  
-
  
   // INPUTS
   pinMode(PIN_PTT, INPUT_PULLUP);
@@ -64,6 +59,9 @@ void setup()
   
   pinMode(PIN_PA_FAN_ENABLE, OUTPUT);
   digitalWrite(PIN_PA_FAN_ENABLE, 0);
+  pinMode(PIN_TEST_OUTPUT, OUTPUT);
+  digitalWrite(PIN_TEST_OUTPUT, 0);
+
 
   pinMode(PIN_KEYPAD_C1, OUTPUT);
   pinMode(PIN_KEYPAD_C2, OUTPUT);
@@ -441,19 +439,13 @@ void poll_switches()
  
 
 //
-// Encoder polling task
-//
-
-void task_poll_encoder()
-{
- encoder.poll();
-}
-
-//
 // I/0 polling task
 //
 
 void task_poll_io(){
+  static uint8_t toggle = 0;
+  digitalWrite(PIN_TEST_OUTPUT, (toggle ^= 1));
+  encoder.poll();
   poll_switches();
   serial_commands();
 }

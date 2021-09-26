@@ -2,6 +2,8 @@
 #include <Wire.h>
 
 #include <config.hpp>
+#include <bandsel.hpp>
+#include <event.hpp>
 #include <vfo.hpp>
 #include <logger.hpp>
 
@@ -13,6 +15,9 @@
 #define TRX_ENA_TUNE_OSC 0x1
 
 
+//
+// Extend Etherkit Si5351 class to include setting frequency in Hz.
+//
 
 class Ext_Si5351 : public Si5351
 {

@@ -1,5 +1,4 @@
 #ifndef __LOGGER_HPP__
-#include <Arduino.h>
 
 #define ERR_NO_BPF 100
 #define ERR_NO_LPF 101

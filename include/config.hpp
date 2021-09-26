@@ -1,11 +1,8 @@
 #ifndef __CONFIG_HPP__
-#include <Arduino.h>
-#include <bandsel.hpp>
 
 //
 // Pins used
 //
-// 24 GPIO's
 
 // Rotary Encoder
 #define PIN_ENCODER_I PB0
@@ -36,24 +33,28 @@
 #define PIN_SPI_MOSI PA7 // SPI1
 #define PIN_SPI_MISO PA6 // SPI1
 #define PIN_SPI_CS PA8 // Display chip select
-#define PIN_SPI_A0 PA3 // A0 Command data signal
 
 // UART
 #define PIN_UART_TX PA9 // SERIAL1
-#define PIN_UART_RX PA10 // SERAIL1
+#define PIN_UART_RX PA10 // SERIAL1
 
 // Outputs
-#define PIN_PA_FAN_ENABLE PB3 
+#define PIN_PA_FAN_ENABLE PB3
 #define PIN_STM32_LED PC13 // Blue pill LED.
+#define PIN_TEST_OUTPUT PA3
 
 //
 // Unused pins
 // 
 // PA0
 // PA2
+// PA3
 // PA4  
 // PA11 - USB DM
 // PA12 - USB DP
+// PA15
+// PC14
+// PC15
 // 
 
 
@@ -70,12 +71,16 @@
 
 // Clock Source Calibration value
 // From Clock source calibration Records
-#define CLK_SOURCE_CAL_VALUE -4440
+#define CLK_SOURCE_CAL_VALUE -4560
 
 // Carrier oscillator frequency (Depends on crystal filter)
 // Empirically determined. Measured with test equipment.
 
 #define CARRIER_OSC_FREQ  9000683UL // Value is in Hz.(9.000683 MHz)
+
+// Band bits
+
+enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BAND_20M = 0x10, BAND_40M = 0x20, BAND_80M = 0x40, BAND_160M = 0x80};
 
 
 // Band 1

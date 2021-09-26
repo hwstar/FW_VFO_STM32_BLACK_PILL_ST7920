@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <logger.hpp>
 #include <config.hpp>
 

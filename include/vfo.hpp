@@ -4,9 +4,9 @@
 
 #ifndef __VFO_HPP__
 
-#include <bandsel.hpp>
-#include <config.hpp>
-#include <event.hpp>
+//#include <bandsel.hpp>
+//#include <config.hpp>
+//#include <event.hpp>
 
 
 class VFO

@@ -6,9 +6,9 @@
 
 #include <pca9554.hpp>
 
+
 // Band Definitions
 
-enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BAND_20M = 0x10, BAND_40M = 0x20, BAND_80M = 0x40, BAND_160M = 0x80};
 
 // Band Select Class
 
