@@ -1,7 +1,7 @@
 #ifndef __CONFIG_HPP__
 
 //
-// Pins used
+// Black Pill pins used
 //
 
 // Rotary Encoder
@@ -40,7 +40,7 @@
 
 // Outputs
 #define PIN_PA_FAN_ENABLE PB3
-#define PIN_STM32_LED PC13 // Blue pill LED.
+#define PIN_STM32_LED PC13 // Black pill LED.
 #define PIN_TEST_OUTPUT PA3
 
 //
@@ -70,7 +70,7 @@
 #define RADIO_TUNE 2
 
 // Clock Source Calibration value
-// From Clock source calibration Records
+// From Etherkit Clock source calibration Records
 #define CLK_SOURCE_CAL_VALUE -4560
 
 // Carrier oscillator frequency (Depends on crystal filter)
