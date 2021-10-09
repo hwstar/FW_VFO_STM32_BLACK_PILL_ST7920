@@ -10,6 +10,7 @@ class DISPLAY_DRIVER
     void refresh();
     void events(event_data ed, uint8_t event_subtype);
 
+
     private:
     uint32_t freq;
     uint8_t mode;

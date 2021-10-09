@@ -233,7 +233,8 @@ void DISPLAY_DRIVER::events(event_data ed, uint8_t event_subtype)
             break;
         case EV_SUBTYPE_KEYPAD_ENTRY:
             keypad_keys = ed.cp;
-
+            break;
+        case EV_SUBTYPE_POST_ERROR:
             break;
         default:
             break;

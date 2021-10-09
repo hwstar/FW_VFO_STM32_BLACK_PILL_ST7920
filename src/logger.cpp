@@ -1,29 +1,43 @@
 #include <Arduino.h>
 #include <logger.hpp>
 #include <config.hpp>
+#include <event.hpp>
 
 
-const char *LOGGER::lookup_error(uint16_t error_code)
+bool LOGGER::lookup_error(uint16_t error_code, const char **long_str, const char **short_str )
 {
-    const char *res = NULL;
+    char res = true;
+
+    if(!long_str || !short_str)
+        return false;
+
     switch(error_code){
 
         case ERR_NO_BPF:
-            res = "No Bandpass Filter Board Detected";
+            *long_str = "No Bandpass Filter Board Detected";
+            *short_str = "No BPF I2C Comm";
             break;
+
         case ERR_NO_LPF:
-            res = "No Low Pass Filter Board Detected";
+            *long_str = "No Low Pass Filter Board Detected";
+            *short_str = "No LPF I2C Comm";
+
+            
             break;
 
         case ERR_NO_TRX:
-            res = "No TRX Motherboard Detected";
+            *long_str = "No TRX Motherboard Detected";
+            *short_str = "No TRX I2C Comm";
             break;
 
         case ERR_NO_CLK_GEN:
-            res = "No Clock Generator Detected";
+            *long_str = "No Clock Generator Detected";
+            *short_str = "No Clk Gen I2C Comm";
             break;
 
         default:
+            *long_str = *short_str = NULL;
+            res = false;
             break;
     }
     return res;
@@ -33,11 +47,13 @@ const char *LOGGER::lookup_error(uint16_t error_code)
 
 void LOGGER::error(uint16_t error_code)
 {
-    const char *s = lookup_error(error_code);
-    if(s)
-        Serial1.printf("Error %d\r\n");
+    const char *long_str, *short_str;
+    
+    if(lookup_error(error_code, &long_str, &short_str))
+        Serial1.printf("Error %d: %s\r\n", long_str);
     else
-        Serial1.printf("Error %d: %s\r\n", s);
+        Serial1.printf("Error %d\r\n", error_code);
+       
 
 }
 

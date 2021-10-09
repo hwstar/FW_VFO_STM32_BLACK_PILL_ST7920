@@ -59,6 +59,8 @@ void setup()
   
   pinMode(PIN_PA_FAN_ENABLE, OUTPUT);
   digitalWrite(PIN_PA_FAN_ENABLE, 0);
+  pinMode(PIN_DISPLAY_BACKLIGHT, OUTPUT);
+  digitalWrite(PIN_DISPLAY_BACKLIGHT, 1);
   pinMode(PIN_TEST_OUTPUT, OUTPUT);
   digitalWrite(PIN_TEST_OUTPUT, 0);
 

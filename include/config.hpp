@@ -39,6 +39,7 @@
 #define PIN_UART_RX PA10 // SERIAL1
 
 // Outputs
+#define PIN_DISPLAY_BACKLIGHT PA11 
 #define PIN_PA_FAN_ENABLE PB3
 #define PIN_STM32_LED PC13 // Black pill LED.
 #define PIN_TEST_OUTPUT PA3

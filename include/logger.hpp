@@ -11,7 +11,7 @@ class LOGGER
     void error(uint16_t error_code);
 
     private:
-    const char *lookup_error(uint16_t error_code);
+    bool lookup_error(uint16_t error_code, const char **long_str, const char **short_str);
 };
 
 // External reference to logger class
