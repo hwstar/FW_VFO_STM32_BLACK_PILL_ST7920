@@ -300,6 +300,11 @@ void VFO::subscriber(event_data ed, uint8_t event_subtype )
         case EV_SUBTYPE_SET_INCR:
             tuning_knob_increment = ed.u32_val;
             break;
+        case EV_SUBTYPE_TICK_MS:
+            break;
+
+        default:
+            break;
 
     }
 }

@@ -236,6 +236,11 @@ void DISPLAY_DRIVER::events(event_data ed, uint8_t event_subtype)
             break;
         case EV_SUBTYPE_POST_ERROR:
             break;
+
+        case EV_SUBTYPE_TICK_HUNDRED_MS:
+            this->refresh(); 
+            break;
+            
         default:
             break;
     }

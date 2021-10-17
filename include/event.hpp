@@ -8,6 +8,7 @@
 #define EVENT_VFO  0x00000010
 #define EVENT_DISPLAY 0x00000020
 #define EVENT_SWITCH 0x00000040
+#define EVENT_TICK 0x80000000
 
 #define EV_SUBTYPE_NONE 0
 #define EV_SUBTYPE_SET_FREQ 1
@@ -24,7 +25,10 @@
 #define EV_SUBTYPE_TUNE_CCW 12
 #define EV_SUBTYPE_KEYPAD_ENTRY 13
 #define EV_SUBTYPE_POST_ERROR 14
-
+#define EV_SUBTYPE_TICK_MS 15
+#define EV_SUBTYPE_TICK_HUNDRED_MS 16
+#define EV_SUBTYPE_ENCODER_CW 17
+#define EV_SUBTYPE_ENCODER_CCW 18
 
 
 #define MAX_SUBS 32
@@ -33,6 +37,7 @@ typedef union event_data {
     uint8_t u8_val;
     char char_val;
     uint32_t u32_val;
+    void *vp;
     char *cp;
 } event_data;
 
@@ -47,10 +52,14 @@ class EVENT
     public:
     EVENT();
 
-    void fire(uint32_t event_type, uint8_t event_subtype, uint8_t value = 0);
-    void fire(uint32_t event_type, uint8_t event_subtype, char value = 0);
-    void fire(uint32_t event_type, uint8_t event_subtype, uint32_t value = 0);
+    void fire(uint32_t event_type, uint8_t event_subtype, uint8_t value);
+    void fire(uint32_t event_type, uint8_t event_subtype, char value);
+    void fire(uint32_t event_type, uint8_t event_subtype, uint32_t value);
     void fire(uint32_t event_type, uint8_t event_subtype, event_data ed);
+    void fire(uint32_t event_type, uint8_t event_subtype);
+    void fire(uint32_t event_type, uint8_t event_subtype, char *value);
+    void fire(uint32_t event_type, uint8_t event_subtype, void *value);
+
 
     bool subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filter = EVENT_ALL);
 

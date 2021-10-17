@@ -40,6 +40,44 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char value)
 }
 
 //
+// Fire an event with a char pointer value
+//
+
+void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char *value)
+{
+    event_data ed;
+    ed.cp = value;
+    fire(event_type, event_subtype, ed);
+    
+
+}
+
+//
+// Fire an event with a char pointer value
+//
+
+void EVENT::fire(uint32_t event_type, uint8_t event_subtype, void *value)
+{
+    event_data ed;
+    ed.vp = value;
+    fire(event_type, event_subtype, ed);
+    
+
+}
+
+//
+// Fire an event with no value
+//
+
+void EVENT::fire(uint32_t event_type, uint8_t event_subtype)
+{
+    event_data ed;
+    ed.u32_val = 0;
+    fire(event_type, event_subtype, ed);
+}
+
+
+//
 // Fire an event with a uint8_t value
 //
 

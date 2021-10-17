@@ -5,9 +5,9 @@
 
 
 #include <config.hpp>
+#include <event.hpp>
 #include <logger.hpp>
 #include <encoder.hpp>
-#include <event.hpp>
 #include <display.hpp>
 #include <vfo.hpp>
 
@@ -18,11 +18,14 @@
 Scheduler ts;
 
 // Polling tasks
-void task_poll_io();
+void task_poll_one_ms();
 void task_poll_encoder();
-void task_refresh_display();
-Task itask(1, -1, &task_poll_io, &ts, true);
-Task dtask(100, -1, &task_refresh_display, &ts, true);
+void task_poll_hundred_ms();
+Task ms_task(1, -1, &task_poll_one_ms, &ts, true);
+Task hundred_ms_task(100, -1, &task_poll_hundred_ms, &ts, true);
+
+void event_callback(uint32_t event, uint8_t event_subtype, event_data ed);
+
 
 // Event object
 EVENT event;
@@ -97,8 +100,7 @@ void setup()
   
   // Initialize Encoder
   void encoder_interrupt_handler();
-  void encoder_callback(uint8_t event_type);
-  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, encoder_callback);
+  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, event_callback);
 
   // Initialize display object
   display.begin();
@@ -110,12 +112,13 @@ void setup()
   void vfo_subscriber(event_data, uint8_t);
   void display_subscriber(event_data, uint8_t);
   void serial_output_subscriber(event_data, uint8_t );
-  event.subscribe(encoder_subscriber, EVENT_ENCODER);
+  event.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
   event.subscribe(switch_subscriber, EVENT_SWITCH);
   event.subscribe(keypad_subscriber, EVENT_KEYPAD|EVENT_SERIAL);
-  event.subscribe(vfo_subscriber, EVENT_VFO);
-  event.subscribe(display_subscriber, EVENT_DISPLAY);
+  event.subscribe(vfo_subscriber, EVENT_VFO|EVENT_TICK);
+  event.subscribe(display_subscriber, EVENT_DISPLAY|EVENT_TICK);
   event.subscribe(serial_output_subscriber, EVENT_DISPLAY);
+  
   
   // Initialize vfo object
   // Events must be initialzed first for default freqency and mode to be displayed.
@@ -128,27 +131,14 @@ void setup()
 
 
 //
-// Callback from encoder class
+// Generic event callback
 //
 
-void encoder_callback(uint8_t event_type)
+void event_callback(uint32_t event_bits, uint8_t event_subtype, event_data ed)
 {
-  event.fire(EVENT_ENCODER, event_type, 0UL);
+  event.fire(event_bits, event_subtype, ed);
 }
 
-
-//
-// Action to perform when we get an encoder event
-//
-
-void encoder_subscriber(event_data ed, uint8_t event_subtype)
-{
-
-  if(event_subtype == ENCODER_EVENT_CW)
-    event.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CW, 0UL);
-  else if(event_subtype == ENCODER_EVENT_CCW)
-    event.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CCW, 0UL);
-}
 
 //
 // Action when a switch is pressed
@@ -289,6 +279,15 @@ void vfo_subscriber(event_data ed, uint8_t event_subtype)
 void display_subscriber(event_data ed, uint8_t event_subtype)
 {
   display.events(ed, event_subtype);
+}
+
+//
+// Act on encoder event
+//
+
+void encoder_subscriber(event_data ed, uint8_t event_subtype)
+{
+  encoder.handler(ed, event_subtype);
 }
 
 
@@ -441,24 +440,24 @@ void poll_switches()
  
 
 //
-// I/0 polling task
+// 1 millisecond polling task
 //
 
-void task_poll_io(){
+void task_poll_one_ms(){
   static uint8_t toggle = 0;
   digitalWrite(PIN_TEST_OUTPUT, (toggle ^= 1));
-  encoder.poll();
-  poll_switches();
-  serial_commands();
+  event.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS);
+  poll_switches(); // TODO Refactor and Remove
+  serial_commands(); // TODO Refactor and Remove
 }
 
 //
-// Refresh display
+// 100 millisecond polling task
 //
 
-void task_refresh_display()
+void task_poll_hundred_ms()
 {
-  display.refresh();
+  event.fire(EVENT_TICK, EV_SUBTYPE_TICK_HUNDRED_MS);
 }
 
  
