@@ -72,12 +72,13 @@
 
 // Clock Source Calibration value
 // From Etherkit Clock source calibration Records
-#define CLK_SOURCE_CAL_VALUE -4560
+#define CLK_SOURCE_CAL_VALUE -4560 
 
 // Carrier oscillator frequency (Depends on crystal filter)
 // Empirically determined. Measured with test equipment.
 
-#define CARRIER_OSC_FREQ  9000683UL // Value is in Hz.(9.000683 MHz)
+//#define CARRIER_OSC_FREQ  9000683UL // REVX2 #1 Value is in Hz.(9.000683 MHz)
+#define CARRIER_OSC_FREQ  9000736UL // REV X3 #1 Value is in Hz.(9.000736 MHz)
 
 // Band bits
 

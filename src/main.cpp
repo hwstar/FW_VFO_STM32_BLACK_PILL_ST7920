@@ -7,6 +7,9 @@
 #include <config.hpp>
 #include <event.hpp>
 #include <logger.hpp>
+#include <switches.hpp>
+#include <keypad.hpp>
+#include <comm.hpp>
 #include <encoder.hpp>
 #include <display.hpp>
 #include <vfo.hpp>
@@ -24,7 +27,7 @@ void task_poll_hundred_ms();
 Task ms_task(1, -1, &task_poll_one_ms, &ts, true);
 Task hundred_ms_task(100, -1, &task_poll_hundred_ms, &ts, true);
 
-void event_callback(uint32_t event, uint8_t event_subtype, event_data ed);
+void fire_event_callback(uint32_t event, uint8_t event_subtype, event_data ed);
 
 
 // Event object
@@ -100,21 +103,21 @@ void setup()
   
   // Initialize Encoder
   void encoder_interrupt_handler();
-  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, event_callback);
+  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, fire_event_callback);
 
   // Initialize display object
   display.begin();
 
   // Add subscribers to the event object
   void encoder_subscriber(event_data, uint8_t);
-  void switch_subscriber(event_data, uint8_t);
-  void keypad_subscriber(event_data, uint8_t);
+  void encoder_knob_subscriber(event_data, uint8_t);
+  void keypad_parser_subscriber(event_data, uint8_t);
   void vfo_subscriber(event_data, uint8_t);
   void display_subscriber(event_data, uint8_t);
   void serial_output_subscriber(event_data, uint8_t );
   event.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
-  event.subscribe(switch_subscriber, EVENT_SWITCH);
-  event.subscribe(keypad_subscriber, EVENT_KEYPAD|EVENT_SERIAL);
+  event.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB);
+  event.subscribe(keypad_parser_subscriber, EVENT_KEYPAD_PARSER|EVENT_SERIAL);
   event.subscribe(vfo_subscriber, EVENT_VFO|EVENT_TICK);
   event.subscribe(display_subscriber, EVENT_DISPLAY|EVENT_TICK);
   event.subscribe(serial_output_subscriber, EVENT_DISPLAY);
@@ -131,20 +134,20 @@ void setup()
 
 
 //
-// Generic event callback
+// Generic fire event callback
 //
 
-void event_callback(uint32_t event_bits, uint8_t event_subtype, event_data ed)
+void fire_event_callback(uint32_t event_bits, uint8_t event_subtype, event_data ed)
 {
   event.fire(event_bits, event_subtype, ed);
 }
 
 
 //
-// Action when a switch is pressed
+// Action when a encoder knob is pressed
 //
 
-void switch_subscriber(event_data ed, uint8_t event_subtype)
+void encoder_knob_subscriber(event_data ed, uint8_t event_subtype)
 {
   uint32_t new_incr;
   uint32_t curr_incr;
@@ -168,9 +171,9 @@ void switch_subscriber(event_data ed, uint8_t event_subtype)
 
 
 //
-// Act on keypad events
+// Parse keypad events
 //
-void keypad_subscriber(event_data ed, uint8_t event_subtype)
+void keypad_parser_subscriber(event_data ed, uint8_t event_subtype)
 {
   char c = ed.char_val;
   event_data k_ed;
@@ -327,7 +330,7 @@ void serial_commands()
 
 
 //
-// Poll PTT and Tune switches
+// Poll PTT and Tune switches TODO: move to switches class
 //
 
 void poll_switches()
@@ -366,7 +369,7 @@ void poll_switches()
       last_tune = tune;
     }
     if(encoder_switch != last_encoder_switch){
-      event.fire(EVENT_SWITCH, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), 0UL);
+      event.fire(EVENT_ENCODER_KNOB, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), 0UL);
       last_encoder_switch = encoder_switch;
     }
 
@@ -397,7 +400,7 @@ void poll_switches()
     } else if((false == new_key_detect) && (true == last_key_detect)){
       last_key_detect = new_key_detect;
       // Fire keypad event
-      event.fire(EVENT_KEYPAD, EV_SUBTYPE_NONE, scan_table[scan_code]);
+      event.fire(EVENT_KEYPAD_PARSER, EV_SUBTYPE_NONE, scan_table[scan_code]);
     }
 
     if(!new_key_detect) { // Stop scanning when a key is pressed

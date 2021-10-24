@@ -10,7 +10,8 @@
 #include <si5351.h>
 
 #define TRX_PTT 0x80
-#define TRX_M16 0x4
+#define TRX_SPKR_MUTE 0x08 // Rev X3 only
+#define TRX_M16 0x4 // Rev X2 only
 #define TRX_DISABLE_AGC 0x2
 #define TRX_ENA_TUNE_OSC 0x1
 
@@ -141,18 +142,18 @@ void VFO::ptt_set(uint8_t mode)
     if(RADIO_RX == mode){
         is_txing = false;
         last_ptt_mode = mode;
-        trx_save &= ~(TRX_ENA_TUNE_OSC | TRX_PTT);
+        trx_save &= ~(TRX_ENA_TUNE_OSC | TRX_PTT | TRX_SPKR_MUTE);
     }
     else if (RADIO_TX == mode){
         last_ptt_mode = mode;
         is_txing = true;
         trx_save &= ~(TRX_ENA_TUNE_OSC);
-        trx_save |= (TRX_PTT);
+        trx_save |= (TRX_PTT | TRX_SPKR_MUTE);
     }
     else{
         last_ptt_mode = mode;
         is_txing = true;
-        trx_save |=  (TRX_ENA_TUNE_OSC | TRX_PTT);
+        trx_save |=  (TRX_ENA_TUNE_OSC | TRX_PTT | TRX_SPKR_MUTE);
     }
     update_clock_gen();
     trx.write(trx_save);
