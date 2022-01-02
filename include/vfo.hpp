@@ -25,6 +25,7 @@ class VFO
     private:
     bool is_usb;
     bool is_txing;
+    bool test_mode;
     BANDS last_band;
     uint32_t vfo_freq;
     uint32_t high_injection_freq;

@@ -40,6 +40,9 @@ ENCODER encoder;
 DISPLAY_DRIVER display;
 
 
+// 10ms Time slot
+event_data Time_slot;
+
 //
 // Arduino setup function
 //
@@ -448,10 +451,17 @@ void poll_switches()
 
 void task_poll_one_ms(){
   static uint8_t toggle = 0;
+  // Toggle test output every millisecond
   digitalWrite(PIN_TEST_OUTPUT, (toggle ^= 1));
-  event.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS);
-  poll_switches(); // TODO Refactor and Remove
-  serial_commands(); // TODO Refactor and Remove
+  // Send 1 millisecond event
+  event.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS, Time_slot);
+  // Advance to next time slot
+  Time_slot.u32_val++;
+  if(Time_slot.u32_val > 9)
+    Time_slot.u32_val = 0;
+
+  poll_switches(); // TODO Refactor switches.cpp and Remove
+  serial_commands(); // TODO Refactor move to comm.cpp and Remove
 }
 
 //

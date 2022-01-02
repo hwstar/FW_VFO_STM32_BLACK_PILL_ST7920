@@ -23,7 +23,7 @@ void SWITCHES::handler(event_data ed, uint8_t event_subtype)
         else
             ms_counter = 0;
         if(ms_counter == time_slot) { // Only check switches when time slot matches ms_counter on a 10ms interval
-            ed.u32_val = 0UL;
+            ed_zero.u32_val = 0UL;
             // Read switches
             ptt = !digitalRead(PIN_PTT);
             tune = !digitalRead(PIN_TUNE);

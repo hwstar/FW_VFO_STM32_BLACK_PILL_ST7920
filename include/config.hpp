@@ -78,7 +78,9 @@
 // Empirically determined. Measured with test equipment.
 
 //#define CARRIER_OSC_FREQ  9000683UL // REVX2 #1 Value is in Hz.(9.000683 MHz)
-#define CARRIER_OSC_FREQ  9000736UL // REV X3 #1 Value is in Hz.(9.000736 MHz)
+//#define CARRIER_OSC_FREQ  9000736UL // REV X3 #1 Value is in Hz.(9.000736 MHz)
+#define CARRIER_OSC_FREQ  12287718 // REV X4 #1 Value is in Hz.(12.287718 MHz)
+
 
 // Band bits
 

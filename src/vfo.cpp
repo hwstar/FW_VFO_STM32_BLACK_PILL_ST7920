@@ -226,8 +226,9 @@ bool VFO::set_freq (uint32_t freq)
 {
     int i;
     // Do not allow frequency to be adjusted when transmitting
+    // Except when we are in test mode
 
-    if(is_txing)
+    if(is_txing && !test_mode)
         return false;
 
     // Validate VFO frequency
@@ -352,6 +353,8 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
         si5351.set_freq_hz(10000000, clock_outputs[i]);
         // 8mA Drive strength
         si5351.drive_strength(clock_outputs[i], drive_strengths[3]);
+       
+
         // Note: setting up the previous commands turns the outputs on for some reason. Output disable must be the last thing we do.
         // All outputs off
         si5351.output_enable(clock_outputs[i], 0);
@@ -426,6 +429,7 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
     
     tuning_knob_increment = 100UL;
     is_txing = false;
+    test_mode = true;
     update_display_tx(is_txing);
     set_freq(init_freq);
     mode_set(MODE_DEFAULT);
