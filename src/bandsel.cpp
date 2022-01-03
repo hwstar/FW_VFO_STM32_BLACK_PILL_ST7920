@@ -5,26 +5,38 @@
   
   #include <config.hpp>
   #include <bandsel.hpp>
-  #include <logger.hpp>
+  #include <event.hpp>
 
-  
-  
-  bool BANDSEL::begin(class PCA9554 *p_bpf, class PCA9554 *p_lpf, BANDS p_init_band)
+  void BANDSEL::fire_event(uint32_t event_type, uint32_t event_subtype)
+{
+    
+    if(ev_cb != NULL){
+        event_data ed;
+        ed.u32_val = 0L;
+        (*ev_cb)(event_type, event_subtype, ed);
+    }
+}
+
+
+  bool BANDSEL::begin(class PCA9554 *p_bpf, class PCA9554 *p_lpf, void (*event_callback)(uint32_t, uint8_t, event_data), BANDS p_init_band)
     {
 
         bpf = p_bpf;
         lpf = p_lpf;
+        ev_cb = event_callback;
+        bool res = true;
     
         
         if(!lpf->present()){
-            logger.error(ERR_NO_LPF);
-            return false;
+            res = false;
+            fire_event(EVENT_ERROR, EV_SUBTYPE_ERR_NO_LPF);
+          
         }
          
         if(!bpf->present()){
-            logger.error(ERR_NO_BPF);
-            return false;
-        }
+            res = false;
+            fire_event(EVENT_ERROR, EV_SUBTYPE_ERR_NO_BPF);
+        }    
 
 
         lpf->write(0x00);
@@ -35,7 +47,7 @@
         bpf->set_gpio_config(0x00);
         bpf->write(p_init_band);
 
-        return true;
+        return res;
  
     }
 

@@ -74,12 +74,33 @@
 // From Etherkit Clock source calibration Records
 #define CLK_SOURCE_CAL_VALUE -4560 
 
-// Carrier oscillator frequency (Depends on crystal filter)
-// Empirically determined. Measured with test equipment.
 
-//#define CARRIER_OSC_FREQ  9000683UL // REVX2 #1 Value is in Hz.(9.000683 MHz)
-//#define CARRIER_OSC_FREQ  9000736UL // REV X3 #1 Value is in Hz.(9.000736 MHz)
-#define CARRIER_OSC_FREQ  12287718 // REV X4 #1 Value is in Hz.(12.287718 MHz)
+
+#define FIRST_IF_UPPER_M6DB 45107500  // First IF upper -6db point MCF passband
+#define FIRST_IF_LOWER_M6DB 45092500  // First IF lower -6db point MCF passband
+
+
+#define SECOND_IF_UPPER_M6DB 12287418 // Second IF upper -6db point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12284918 // Second IF lower -6db point crystal filter passband
+
+//
+// Calculated from above
+//
+
+#define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
+#define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
+
+#define FIRST_IF_BW6DB (FIRST_IF_UPPER_M6DB - FIRST_IF_LOWER_M6DB )
+#define FIRST_IF_FCENTER  ((FIRST_IF_BW6DB/2)+FIRST_IF_LOWER_M6DB )
+
+#define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
+
+
+
+
+
+
+
 
 
 // Band bits
@@ -135,12 +156,13 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define BAND_EDGE_HIGH_8    30000000UL
 #define BAND_DEF_USB_8      true
 
-
 // Local oscillator outputs on clock generator
 // ID numbers depend on the type of clock generator used.
 
-#define FIRST_LO_ID 0               // Is the VFO in RX and the Carrier oscillator in TX
-#define SECOND_LO_ID 2              // Is the BFO in RX, and the VFO in TX
+#define FIRST_LO_ID 0               // Is the first IF to second if conversion oscillator in RX and the Carrier oscillator in TX
+#define SECOND_LO_ID 1              // Is the BFO in RX, and the second if to first IF conversion oscillator in TX
+#define THIRD_LO_ID 2               // Is the VFO injection oscillator from the first IF to the desired band
+
      
 //
 // I2C Slaves

@@ -45,6 +45,10 @@ class VFO
     bool set_freq (uint32_t freq); 
     void ptt_set(uint8_t mode);
     void mode_set(uint8_t mode);
+    void fire_event(uint32_t event_type, uint32_t event_subtype, uint32_t ev_data);
+    void fire_event(uint32_t event_type, uint32_t event_subtype, uint8_t ev_data);
+    void fire_event(uint32_t event_type, uint32_t event_subtype);
+
 };
 
 #define __VFO_HPP__

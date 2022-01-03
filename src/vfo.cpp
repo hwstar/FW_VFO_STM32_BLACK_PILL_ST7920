@@ -2,16 +2,14 @@
 #include <Wire.h>
 
 #include <config.hpp>
-#include <bandsel.hpp>
 #include <event.hpp>
+#include <bandsel.hpp>
 #include <vfo.hpp>
-#include <logger.hpp>
 
 #include <si5351.h>
 
 #define TRX_PTT 0x80
-#define TRX_SPKR_MUTE 0x08 // Rev X3 only
-#define TRX_M16 0x4 // Rev X2 only
+#define TRX_SPKR_MUTE 0x08 
 #define TRX_DISABLE_AGC 0x2
 #define TRX_ENA_TUNE_OSC 0x1
 
@@ -71,43 +69,68 @@ void VFO::update_clock_gen()
   
     uint32_t first_lo_freq;
     uint32_t second_lo_freq;
+    uint32_t third_lo_freq;
     
     //
     // Calculate the injection frequencies
     //
 
-    high_injection_freq = vfo_freq + bfo_carrier_freq;
-    if(vfo_freq > bfo_carrier_freq){
-        low_injection_freq = vfo_freq - bfo_carrier_freq;
-    }
-    else{
-        low_injection_freq = bfo_carrier_freq - vfo_freq;
-    }
-
-    /*
-    Serial1.printf("IS TXing         : %u\r\n", is_txing);
-    Serial1.printf("VFO Freq         : %lu\r\n", vfo_freq);
-    Serial1.printf("High Injection   : %lu\r\n", high_injection_freq);
-    Serial1.printf("Low Injection    : %lu\r\n", low_injection_freq);
-    */
-    
+    high_injection_freq = vfo_freq + FIRST_IF_FCENTER;
+    low_injection_freq = FIRST_IF_FCENTER-vfo_freq;
 
     if(is_txing){
         // First LO gets the carrier frequency
         first_lo_freq = bfo_carrier_freq;
-        second_lo_freq = (is_usb)? high_injection_freq : low_injection_freq;
+        second_lo_freq = FIRST_TO_SECOND_IF_DELTA; // One inversion here
+        third_lo_freq = (!is_usb)? high_injection_freq : low_injection_freq; // Low side injection for USB due to inversion at second LO
 
     } else { // RX
         // Second LO gets the carrier frequency.
-        second_lo_freq = bfo_carrier_freq;
-        first_lo_freq = (is_usb)? high_injection_freq : low_injection_freq;
+        first_lo_freq = FIRST_TO_SECOND_IF_DELTA; // One inversion here
+        second_lo_freq = bfo_carrier_freq; 
+        third_lo_freq = (!is_usb)? high_injection_freq : low_injection_freq; // Low side injection for USB due to inversion at first LO 
     }
     //
     // Set the LO frequencies
     //
     si5351.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
     si5351.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
+    si5351.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
 }
+
+//
+// Fire an event
+//
+
+void VFO::fire_event(uint32_t event_type, uint32_t event_subtype, uint32_t ev_data)
+{
+    
+    if(_event_callback != NULL){
+        event_data ed;
+        ed.u32_val = ev_data;
+        (*_event_callback)(event_type, event_subtype, ed);
+    }
+}
+void VFO::fire_event(uint32_t event_type, uint32_t event_subtype, uint8_t ev_data)
+{
+    
+    if(_event_callback != NULL){
+        event_data ed;
+        ed.u8_val = ev_data;
+        (*_event_callback)(event_type, event_subtype, ed);
+    }
+}
+
+void VFO::fire_event(uint32_t event_type, uint32_t event_subtype)
+{
+    
+    if(_event_callback != NULL){
+        event_data ed;
+        ed.u32_val = 0L;
+        (*_event_callback)(event_type, event_subtype, ed);
+    }
+}
+
 
 //
 // Update the display showing the TX state
@@ -189,12 +212,7 @@ void VFO::mode_set(uint8_t mode)
     update_clock_gen();
 
     // Fire display event to update mode
-
-    if(_event_callback){
-        event_data ed;
-        ed.u8_val = mode;
-        (*_event_callback)(EVENT_DISPLAY, EV_SUBTYPE_SET_MODE, ed);
-    }
+    fire_event(EVENT_DISPLAY, EV_SUBTYPE_SET_MODE, mode);
 }
 
 //
@@ -253,16 +271,10 @@ bool VFO::set_freq (uint32_t freq)
     }
     band_index = i;
 
-
     update_clock_gen();
 
     // Fire display event to update frequency
-    if(_event_callback != NULL){
-        event_data ed;
-        ed.u32_val = freq;
-        (*_event_callback)(EVENT_DISPLAY, EV_SUBTYPE_SET_FREQ, ed);
-    }
-
+    fire_event(EVENT_DISPLAY, EV_SUBTYPE_SET_FREQ, freq);
 
     return true;
 }
@@ -330,28 +342,23 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
 
 
     if(!si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
-        logger.error(ERR_NO_CLK_GEN);
-       
-        return false;
+        fire_event(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
     }
 
     // Initialize the TRX motherboard defaults
-
-    if(!trx.present()){
-        logger.error(ERR_NO_TRX);
-        return false;
-    }
-    else{
+    if(trx.present()){
+        // Transceiver board present
         trx_save = 0;
         trx.write(trx_save);
         trx.set_gpio_config(0x00); 
     }
 
 
+
     for(i = 0; i < 3; i++) {
         // Default freq 10 MHz
         si5351.set_freq_hz(10000000, clock_outputs[i]);
-        // 8mA Drive strength
+        // 2mA Drive strength
         si5351.drive_strength(clock_outputs[i], drive_strengths[3]);
        
 
@@ -423,9 +430,9 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
     #endif
 
     // Initialize the band select 
-    band_select.begin(&bpf, &lpf);
+    band_select.begin(&bpf, &lpf, event_callback);
 
-    bfo_carrier_freq = CARRIER_OSC_FREQ;
+    bfo_carrier_freq = SECOND_IF_CARRIER;
     
     tuning_knob_increment = 100UL;
     is_txing = false;
@@ -435,6 +442,7 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, ev
     mode_set(MODE_DEFAULT);
     si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
+    si5351.output_enable(clock_outputs[THIRD_LO_ID], 1);
 
 
     digitalWrite(PIN_STM32_LED, 0); // LED on

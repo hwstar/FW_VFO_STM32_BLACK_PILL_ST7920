@@ -9,7 +9,8 @@
 #define EVENT_DISPLAY 0x00000020
 #define EVENT_ENCODER_KNOB 0x00000040
 #define EVENT_SWITCHES 0x00000080
-#define EVENT_TICK 0x80000000
+#define EVENT_TICK 0x40000000
+#define EVENT_ERROR 0x80000000
 
 #define EV_SUBTYPE_NONE 0
 #define EV_SUBTYPE_SET_FREQ 1
@@ -31,6 +32,10 @@
 #define EV_SUBTYPE_ENCODER_CW 17
 #define EV_SUBTYPE_ENCODER_CCW 18
 
+#define EV_SUBTYPE_ERR_NO_BPF 0x80000001
+#define EV_SUBTYPE_ERR_NO_LPF 0x80000002
+#define EV_SUBTYPE_ERR_NO_TRX 0x80000003  
+#define EV_SUBTYPE_ERR_NO_CLKGEN 0x80000004
 
 #define MAX_SUBS 32
 
@@ -53,13 +58,13 @@ class EVENT
     public:
     EVENT();
 
-    void fire(uint32_t event_type, uint8_t event_subtype, uint8_t value);
-    void fire(uint32_t event_type, uint8_t event_subtype, char value);
-    void fire(uint32_t event_type, uint8_t event_subtype, uint32_t value);
-    void fire(uint32_t event_type, uint8_t event_subtype, event_data ed);
-    void fire(uint32_t event_type, uint8_t event_subtype);
-    void fire(uint32_t event_type, uint8_t event_subtype, char *value);
-    void fire(uint32_t event_type, uint8_t event_subtype, void *value);
+    void fire(uint32_t event_type, uint32_t event_subtype, uint8_t value);
+    void fire(uint32_t event_type, uint32_t event_subtype, char value);
+    void fire(uint32_t event_type, uint32_t event_subtype, uint32_t value);
+    void fire(uint32_t event_type, uint32_t event_subtype, event_data ed);
+    void fire(uint32_t event_type, uint32_t event_subtype);
+    void fire(uint32_t event_type, uint32_t event_subtype, char *value);
+    void fire(uint32_t event_type, uint32_t event_subtype, void *value);
 
 
     bool subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filter = EVENT_ALL);

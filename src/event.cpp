@@ -30,7 +30,7 @@ bool EVENT::subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filt
 // Fire an event with a char value
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char value)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, char value)
 {
     event_data ed;
     ed.char_val = value;
@@ -43,7 +43,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char value)
 // Fire an event with a char pointer value
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char *value)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, char *value)
 {
     event_data ed;
     ed.cp = value;
@@ -56,7 +56,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, char *value)
 // Fire an event with a char pointer value
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype, void *value)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, void *value)
 {
     event_data ed;
     ed.vp = value;
@@ -69,7 +69,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, void *value)
 // Fire an event with no value
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype)
 {
     event_data ed;
     ed.u32_val = 0;
@@ -81,7 +81,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype)
 // Fire an event with a uint8_t value
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype, uint8_t value)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, uint8_t value)
 {
     event_data ed;
     ed.u8_val = value;
@@ -93,7 +93,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, uint8_t value)
 // Fire an event with a 32 bit unsigned value
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype, uint32_t value)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, uint32_t value)
 {
     event_data ed;
     ed.u32_val = value;
@@ -105,7 +105,7 @@ void EVENT::fire(uint32_t event_type, uint8_t event_subtype, uint32_t value)
 // Generic fire function
 //
 
-void EVENT::fire(uint32_t event_type, uint8_t event_subtype, event_data ed)
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, event_data ed)
 {
     uint8_t i;
 

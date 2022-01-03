@@ -6,7 +6,6 @@
 
 #include <config.hpp>
 #include <event.hpp>
-#include <logger.hpp>
 #include <switches.hpp>
 #include <keypad.hpp>
 #include <comm.hpp>
