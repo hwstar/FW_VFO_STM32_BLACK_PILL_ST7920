@@ -8,7 +8,7 @@ class DISPLAY_DRIVER
     public:
     void begin();
     void refresh();
-    void events(event_data ed, uint8_t event_subtype);
+    void events(event_data ed, uint32_t event_subtype);
 
 
     private:

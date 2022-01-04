@@ -19,7 +19,7 @@ void ENCODER::interrupt_handler()
 //
 void ENCODER::begin(uint8_t gpio_i, uint8_t gpio_q, uint8_t gpio_switch, 
         void (interrupt_callback)(), 
-        void (*event_callback)(uint32_t, uint8_t, event_data),
+        void (*event_callback)(uint32_t, uint32_t, event_data),
         bool invert_encoder_signals, bool invert_switch_signal)
 {
     // Save args
@@ -109,7 +109,7 @@ void ENCODER::poll()
 // Handle Encoder Event
 //
 
-void ENCODER::handler(event_data ed, uint8_t event_subtype)
+void ENCODER::handler(event_data ed, uint32_t event_subtype)
 {
 
         switch(event_subtype){

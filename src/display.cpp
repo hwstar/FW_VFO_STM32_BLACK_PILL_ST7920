@@ -219,7 +219,7 @@ void DISPLAY_DRIVER::refresh()
 // Called from event.cpp when there is something to update
 //
 
-void DISPLAY_DRIVER::events(event_data ed, uint8_t event_subtype)
+void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
 {
     switch(event_subtype){
         case EV_SUBTYPE_SET_FREQ:

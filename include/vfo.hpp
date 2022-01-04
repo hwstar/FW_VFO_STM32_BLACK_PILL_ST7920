@@ -13,13 +13,13 @@ class VFO
 {
     public:
     
-    bool begin(uint32_t init_freq = 14250000UL, void (*event_callback)(uint32_t, uint8_t, event_data) = NULL);
+    bool begin(uint32_t init_freq = 14250000UL, void (*event_callback)(uint32_t, uint32_t, event_data) = NULL);
     uint32_t get_freq(); 
     uint8_t ptt_get();
     uint8_t mode_get();
     uint32_t incr_get(); 
 
-    void subscriber(event_data ed, uint8_t event_subtype);
+    void subscriber(event_data ed, uint32_t event_subtype);
 
 
     private:
@@ -37,7 +37,7 @@ class VFO
     uint8_t last_ptt_mode;
     uint8_t band_index;
 
-    void (*_event_callback)(uint32_t, uint8_t, event_data );
+    void (*_event_callback)(uint32_t, uint32_t, event_data );
 
 
     void update_clock_gen();

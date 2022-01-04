@@ -26,7 +26,7 @@ void task_poll_hundred_ms();
 Task ms_task(1, -1, &task_poll_one_ms, &ts, true);
 Task hundred_ms_task(100, -1, &task_poll_hundred_ms, &ts, true);
 
-void fire_event_callback(uint32_t event, uint8_t event_subtype, event_data ed);
+void fire_event_callback(uint32_t event, uint32_t event_subtype, event_data ed);
 
 
 // Event object
@@ -111,12 +111,12 @@ void setup()
   display.begin();
 
   // Add subscribers to the event object
-  void encoder_subscriber(event_data, uint8_t);
-  void encoder_knob_subscriber(event_data, uint8_t);
-  void keypad_parser_subscriber(event_data, uint8_t);
-  void vfo_subscriber(event_data, uint8_t);
-  void display_subscriber(event_data, uint8_t);
-  void serial_output_subscriber(event_data, uint8_t );
+  void encoder_subscriber(event_data, uint32_t);
+  void encoder_knob_subscriber(event_data, uint32_t);
+  void keypad_parser_subscriber(event_data, uint32_t);
+  void vfo_subscriber(event_data, uint32_t);
+  void display_subscriber(event_data, uint32_t);
+  void serial_output_subscriber(event_data, uint32_t );
   event.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
   event.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB);
   event.subscribe(keypad_parser_subscriber, EVENT_KEYPAD_PARSER|EVENT_SERIAL);
@@ -127,7 +127,7 @@ void setup()
   
   // Initialize vfo object
   // Events must be initialzed first for default freqency and mode to be displayed.
-  void vfo_fire_event(uint32_t event_type, uint8_t event_subtype, event_data ed);
+  void vfo_fire_event(uint32_t event_type, uint32_t event_subtype, event_data ed);
   if(!vfo.begin(14250000UL, vfo_fire_event))
     digitalWrite(PC13,1);
 
@@ -139,7 +139,7 @@ void setup()
 // Generic fire event callback
 //
 
-void fire_event_callback(uint32_t event_bits, uint8_t event_subtype, event_data ed)
+void fire_event_callback(uint32_t event_bits, uint32_t event_subtype, event_data ed)
 {
   event.fire(event_bits, event_subtype, ed);
 }
@@ -149,7 +149,7 @@ void fire_event_callback(uint32_t event_bits, uint8_t event_subtype, event_data 
 // Action when a encoder knob is pressed
 //
 
-void encoder_knob_subscriber(event_data ed, uint8_t event_subtype)
+void encoder_knob_subscriber(event_data ed, uint32_t event_subtype)
 {
   uint32_t new_incr;
   uint32_t curr_incr;
@@ -175,7 +175,7 @@ void encoder_knob_subscriber(event_data ed, uint8_t event_subtype)
 //
 // Parse keypad events
 //
-void keypad_parser_subscriber(event_data ed, uint8_t event_subtype)
+void keypad_parser_subscriber(event_data ed, uint32_t event_subtype)
 {
   char c = ed.char_val;
   event_data k_ed;
@@ -263,7 +263,7 @@ void keypad_parser_subscriber(event_data ed, uint8_t event_subtype)
 // This is used to update fields on the display after the VFO object validates them
 //
 
-void vfo_fire_event(uint32_t event_type, uint8_t event_subtype, event_data ed){
+void vfo_fire_event(uint32_t event_type, uint32_t event_subtype, event_data ed){
     event.fire(event_type, event_subtype, ed);
 
 }
@@ -272,7 +272,7 @@ void vfo_fire_event(uint32_t event_type, uint8_t event_subtype, event_data ed){
 // Act on VFO parameter change
 //
 
-void vfo_subscriber(event_data ed, uint8_t event_subtype)
+void vfo_subscriber(event_data ed, uint32_t event_subtype)
 {
     vfo.subscriber(ed, event_subtype);
 }
@@ -281,7 +281,7 @@ void vfo_subscriber(event_data ed, uint8_t event_subtype)
 // Act on display event
 //
 
-void display_subscriber(event_data ed, uint8_t event_subtype)
+void display_subscriber(event_data ed, uint32_t event_subtype)
 {
   display.events(ed, event_subtype);
 }
@@ -290,13 +290,13 @@ void display_subscriber(event_data ed, uint8_t event_subtype)
 // Act on encoder event
 //
 
-void encoder_subscriber(event_data ed, uint8_t event_subtype)
+void encoder_subscriber(event_data ed, uint32_t event_subtype)
 {
   encoder.handler(ed, event_subtype);
 }
 
 
-void serial_output_subscriber(event_data ed, uint8_t event_subtype)
+void serial_output_subscriber(event_data ed, uint32_t event_subtype)
 {
   switch(event_subtype){
       case EV_SUBTYPE_SET_FREQ:

@@ -283,7 +283,7 @@ bool VFO::set_freq (uint32_t freq)
 // VFO event subscriber
 //
 
-void VFO::subscriber(event_data ed, uint8_t event_subtype )
+void VFO::subscriber(event_data ed, uint32_t event_subtype )
 {
     switch(event_subtype){
         case EV_SUBTYPE_TUNE_CW:
@@ -328,7 +328,7 @@ void VFO::subscriber(event_data ed, uint8_t event_subtype )
 // Initialize VFO
 //
 
-bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint8_t, event_data)) 
+bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint32_t, event_data)) 
 {
     digitalWrite(PIN_STM32_LED,1); // LED off
 

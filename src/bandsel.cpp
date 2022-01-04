@@ -18,7 +18,7 @@
 }
 
 
-  bool BANDSEL::begin(class PCA9554 *p_bpf, class PCA9554 *p_lpf, void (*event_callback)(uint32_t, uint8_t, event_data), BANDS p_init_band)
+  bool BANDSEL::begin(class PCA9554 *p_bpf, class PCA9554 *p_lpf, void (*event_callback)(uint32_t, uint32_t, event_data), BANDS p_init_band)
     {
 
         bpf = p_bpf;

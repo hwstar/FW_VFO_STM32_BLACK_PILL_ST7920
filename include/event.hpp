@@ -48,7 +48,7 @@ typedef union event_data {
 } event_data;
 
 typedef struct event_table {
-    void (*callback)(event_data, uint8_t);
+    void (*callback)(event_data, uint32_t);
     uint32_t filter;
 } event_table;
 
@@ -67,7 +67,7 @@ class EVENT
     void fire(uint32_t event_type, uint32_t event_subtype, void *value);
 
 
-    bool subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filter = EVENT_ALL);
+    bool subscribe(void (*callback)(event_data, uint32_t), uint32_t event_filter = EVENT_ALL);
 
     private:
    

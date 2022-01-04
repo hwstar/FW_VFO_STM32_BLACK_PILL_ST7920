@@ -14,7 +14,7 @@ EVENT::EVENT()
 // Subscribe to the event bus
 //
 
-bool EVENT::subscribe(void (*callback)(event_data, uint8_t), uint32_t event_filter)
+bool EVENT::subscribe(void (*callback)(event_data, uint32_t), uint32_t event_filter)
 {
     if(num_subs < MAX_SUBS){
         et[num_subs].filter = event_filter;

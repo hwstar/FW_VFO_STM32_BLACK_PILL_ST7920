@@ -6,7 +6,7 @@
 
 
 
-void SWITCHES::handler(event_data ed, uint8_t event_subtype)
+void SWITCHES::handler(event_data ed, uint32_t event_subtype)
 {
 
 //
