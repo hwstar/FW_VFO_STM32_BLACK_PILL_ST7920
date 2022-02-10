@@ -166,6 +166,7 @@ void DISPLAY_DRIVER::refresh()
 {
     const char *modestr;
     const char *radiostr;
+    const char *agcstr;
     const char *clear12 = "            ";
     char freqall[20];
     char line40[20];
@@ -185,6 +186,11 @@ void DISPLAY_DRIVER::refresh()
         modestr = "USB";
     else
         modestr = "LSB";
+
+    if(agc_state)
+        agcstr = "AGC";
+    else
+        agcstr = "";
     
     switch(tx_mode){
         case RADIO_RX:
@@ -209,7 +215,8 @@ void DISPLAY_DRIVER::refresh()
         st7920.drawStr(0, 20, freqall);
         st7920.setFont(u8g2_font_ncenB08_tr);
         st7920.drawStr(100, 20, modestr);
-        st7920.drawStr(0,40,line40);
+        st7920.drawStr(0, 40, line40);
+        st7920.drawStr(70, 60, agcstr);
         st7920.drawStr(100, 60, radiostr);
     } while ( st7920.nextPage() );
 
@@ -228,6 +235,9 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
         case EV_SUBTYPE_SET_MODE:
             mode = ed.u8_val;
             break;
+        case EV_SUBTYPE_SET_AGC:
+            agc_state = ed.u8_val;
+            break;
         case EV_SUBTYPE_TX_MODE:
             tx_mode = ed.u8_val;
             break;
@@ -236,7 +246,6 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
             break;
         case EV_SUBTYPE_POST_ERROR:
             break;
-
         case EV_SUBTYPE_TICK_HUNDRED_MS:
             this->refresh(); 
             break;

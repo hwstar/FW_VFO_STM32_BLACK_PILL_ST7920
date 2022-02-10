@@ -82,13 +82,13 @@ void VFO::update_clock_gen()
         // First LO gets the carrier frequency
         first_lo_freq = bfo_carrier_freq;
         second_lo_freq = FIRST_TO_SECOND_IF_DELTA; // One inversion here
-        third_lo_freq = (!is_usb)? high_injection_freq : low_injection_freq; // Low side injection for USB due to inversion at second LO
+        third_lo_freq = (is_usb)? high_injection_freq : low_injection_freq; // DEBUG
 
     } else { // RX
         // Second LO gets the carrier frequency.
         first_lo_freq = FIRST_TO_SECOND_IF_DELTA; // One inversion here
         second_lo_freq = bfo_carrier_freq; 
-        third_lo_freq = (!is_usb)? high_injection_freq : low_injection_freq; // Low side injection for USB due to inversion at first LO 
+        third_lo_freq = (is_usb)? high_injection_freq : low_injection_freq; // DEBUG
     }
     //
     // Set the LO frequencies
@@ -216,6 +216,21 @@ void VFO::mode_set(uint8_t mode)
 }
 
 //
+// Enable or disable the AGC
+//
+
+void VFO::agc_set(uint8_t state)
+{
+    if(state)
+        trx_save &=  ~TRX_DISABLE_AGC;
+    else
+        trx_save |= TRX_DISABLE_AGC;
+    trx.write(trx_save);
+    // Fire display event to update mode
+    fire_event(EVENT_DISPLAY, EV_SUBTYPE_SET_AGC, state);
+}
+
+//
 // Get mode
 //
 
@@ -296,6 +311,11 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             set_freq(ed.u32_val);
             mode_set(MODE_DEFAULT); // Set default for band
             break;
+
+        case EV_SUBTYPE_SET_AGC:
+            agc_set(ed.u8_val);
+            break;
+
         case EV_SUBTYPE_SET_MODE:
             mode_set(ed.u8_val);
             break;
@@ -358,8 +378,8 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint32_t, e
     for(i = 0; i < 3; i++) {
         // Default freq 10 MHz
         si5351.set_freq_hz(10000000, clock_outputs[i]);
-        // 2mA Drive strength
-        si5351.drive_strength(clock_outputs[i], drive_strengths[3]);
+        // 4mA Drive strength
+        si5351.drive_strength(clock_outputs[i], drive_strengths[1]);
        
 
         // Note: setting up the previous commands turns the outputs on for some reason. Output disable must be the last thing we do.
@@ -439,6 +459,7 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint32_t, e
     test_mode = true;
     update_display_tx(is_txing);
     set_freq(init_freq);
+    agc_set(1);
     mode_set(MODE_DEFAULT);
     si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);

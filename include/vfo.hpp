@@ -43,6 +43,7 @@ class VFO
     void update_clock_gen();
     void update_display_tx(uint8_t val);
     bool set_freq (uint32_t freq); 
+    void agc_set(uint8_t state);
     void ptt_set(uint8_t mode);
     void mode_set(uint8_t mode);
     void fire_event(uint32_t event_type, uint32_t event_subtype, uint32_t ev_data);

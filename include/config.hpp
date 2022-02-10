@@ -76,12 +76,12 @@
 
 
 
-#define FIRST_IF_UPPER_M6DB 45107500  // First IF upper -6db point MCF passband
-#define FIRST_IF_LOWER_M6DB 45092500  // First IF lower -6db point MCF passband
+#define FIRST_IF_UPPER_M6DB 45106416 // First IF upper -6db point MCF passband
+#define FIRST_IF_LOWER_M6DB 45093583  // First IF lower -6db point MCF passband
 
 
-#define SECOND_IF_UPPER_M6DB 12287418 // Second IF upper -6db point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12284918 // Second IF lower -6db point crystal filter passband
+#define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6db point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12286225 // Second IF lower -6db point crystal filter passband
 
 //
 // Calculated from above
