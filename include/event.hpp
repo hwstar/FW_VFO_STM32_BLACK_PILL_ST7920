@@ -76,5 +76,7 @@ class EVENT
     uint8_t num_subs;
 };
 
+extern EVENT pubsub;
+
 #define __EVENT_HPP__
 #endif

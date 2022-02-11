@@ -30,7 +30,8 @@ void fire_event_callback(uint32_t event, uint32_t event_subtype, event_data ed);
 
 
 // Event object
-EVENT event;
+EVENT event; // Deprecated object
+EVENT pubsub; // New object
 // VFO object
 VFO vfo;
 // Encoder object
