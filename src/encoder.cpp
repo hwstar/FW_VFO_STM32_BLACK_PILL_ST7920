@@ -19,7 +19,6 @@ void ENCODER::interrupt_handler()
 //
 void ENCODER::begin(uint8_t gpio_i, uint8_t gpio_q, uint8_t gpio_switch, 
         void (interrupt_callback)(), 
-        void (*event_callback)(uint32_t, uint32_t, event_data),
         bool invert_encoder_signals, bool invert_switch_signal)
 {
     // Save args
@@ -29,7 +28,6 @@ void ENCODER::begin(uint8_t gpio_i, uint8_t gpio_q, uint8_t gpio_switch,
     phase_invert = invert_encoder_signals;
     switch_invert = invert_switch_signal;
     interrupt_function = interrupt_callback;
-    callback_function = event_callback;
     encoder_sync_count = encoder_error = 0;
     
     // Set up encoder interrupt
@@ -96,9 +94,9 @@ void ENCODER::poll()
             encoder_error++;
         }
 
-        if(encoder_event && (encoder_sync_count > 4) && callback_function){
+        if(encoder_event && (encoder_sync_count > 4)){
             event_data ed;
-            (*callback_function)(EVENT_ENCODER, encoder_event, ed);
+            pubsub.fire(EVENT_ENCODER, encoder_event, ed);
         }
         last_iq_state = curr_iq_state;
     }
@@ -117,10 +115,10 @@ void ENCODER::handler(event_data ed, uint32_t event_subtype)
                 this->poll();
                 break;
             case EV_SUBTYPE_ENCODER_CW:
-                callback_function(EVENT_VFO, EV_SUBTYPE_TUNE_CW, ed);
+                pubsub.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CW, ed);
                 break;
             case EV_SUBTYPE_ENCODER_CCW:
-                callback_function(EVENT_VFO, EV_SUBTYPE_TUNE_CCW, ed);
+                pubsub.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CCW, ed);
                 break;
 
             default:

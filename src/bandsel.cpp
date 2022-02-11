@@ -7,35 +7,24 @@
   #include <bandsel.hpp>
   #include <event.hpp>
 
-  void BANDSEL::fire_event(uint32_t event_type, uint32_t event_subtype)
-{
-    
-    if(ev_cb != NULL){
-        event_data ed;
-        ed.u32_val = 0L;
-        (*ev_cb)(event_type, event_subtype, ed);
-    }
-}
 
-
-  bool BANDSEL::begin(class PCA9554 *p_bpf, class PCA9554 *p_lpf, void (*event_callback)(uint32_t, uint32_t, event_data), BANDS p_init_band)
+  bool BANDSEL::begin(class PCA9554 *p_bpf, class PCA9554 *p_lpf, BANDS p_init_band)
     {
 
         bpf = p_bpf;
         lpf = p_lpf;
-        ev_cb = event_callback;
         bool res = true;
     
         
         if(!lpf->present()){
             res = false;
-            fire_event(EVENT_ERROR, EV_SUBTYPE_ERR_NO_LPF);
+            pubsub.fire(EVENT_ERROR, EV_SUBTYPE_ERR_NO_LPF);
           
         }
          
         if(!bpf->present()){
             res = false;
-            fire_event(EVENT_ERROR, EV_SUBTYPE_ERR_NO_BPF);
+            pubsub.fire(EVENT_ERROR, EV_SUBTYPE_ERR_NO_BPF);
         }    
 
 

@@ -26,12 +26,8 @@ void task_poll_hundred_ms();
 Task ms_task(1, -1, &task_poll_one_ms, &ts, true);
 Task hundred_ms_task(100, -1, &task_poll_hundred_ms, &ts, true);
 
-void fire_event_callback(uint32_t event, uint32_t event_subtype, event_data ed);
 
-
-// Event object
-EVENT event; // Deprecated object
-EVENT pubsub; // New object
+EVENT pubsub; // Event object
 // VFO object
 VFO vfo;
 // Encoder object
@@ -106,7 +102,7 @@ void setup()
   
   // Initialize Encoder
   void encoder_interrupt_handler();
-  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); }, fire_event_callback);
+  encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); });
 
   // Initialize display object
   display.begin();
@@ -115,34 +111,23 @@ void setup()
   void encoder_subscriber(event_data, uint32_t);
   void encoder_knob_subscriber(event_data, uint32_t);
   void keypad_parser_subscriber(event_data, uint32_t);
-  void vfo_subscriber(event_data, uint32_t);
   void display_subscriber(event_data, uint32_t);
   void serial_output_subscriber(event_data, uint32_t );
-  event.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
-  event.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB);
-  event.subscribe(keypad_parser_subscriber, EVENT_KEYPAD_PARSER|EVENT_SERIAL);
-  event.subscribe(vfo_subscriber, EVENT_VFO|EVENT_TICK);
-  event.subscribe(display_subscriber, EVENT_DISPLAY|EVENT_TICK);
-  event.subscribe(serial_output_subscriber, EVENT_DISPLAY);
-  
+  void vfo_subscriber(event_data, uint32_t);
+  pubsub.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
+  pubsub.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB);
+  pubsub.subscribe(keypad_parser_subscriber, EVENT_KEYPAD_PARSER|EVENT_SERIAL);
+  pubsub.subscribe(display_subscriber, EVENT_DISPLAY|EVENT_TICK);
+  pubsub.subscribe(serial_output_subscriber, EVENT_DISPLAY);
+  pubsub.subscribe(vfo_subscriber, EVENT_VFO|EVENT_TICK);
   
   // Initialize vfo object
   // Events must be initialzed first for default freqency and mode to be displayed.
   void vfo_fire_event(uint32_t event_type, uint32_t event_subtype, event_data ed);
-  if(!vfo.begin(14250000UL, vfo_fire_event))
+  if(!vfo.begin(14250000UL))
     digitalWrite(PC13,1);
 
 
-}
-
-
-//
-// Generic fire event callback
-//
-
-void fire_event_callback(uint32_t event_bits, uint32_t event_subtype, event_data ed)
-{
-  event.fire(event_bits, event_subtype, ed);
 }
 
 
@@ -162,7 +147,7 @@ void encoder_knob_subscriber(event_data ed, uint32_t event_subtype)
         new_incr = 1000UL;
       else
         new_incr = 100UL;
-      event.fire(EVENT_VFO, EV_SUBTYPE_SET_INCR, new_incr);
+      pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_INCR, new_incr);
 
     default:
       break;
@@ -180,7 +165,7 @@ bool keypad_agc_set(char *command_string, uint8_t command_string_index)
   if(4 == command_string_index){
     event_data ed;
     ed.u8_val = (command_string[3] == '1');
-    event.fire(EVENT_VFO, EV_SUBTYPE_SET_AGC, ed);
+    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_AGC, ed);
     return true;
   }
   else
@@ -296,7 +281,7 @@ void keypad_parser_subscriber(event_data ed, uint32_t event_subtype)
         // Calculate the frequency in Hz
         vf = (m * 1000000) + f;
         // Set the VFO frequency
-        event.fire(EVENT_VFO, EV_SUBTYPE_SET_FREQ, vf);
+        pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_FREQ, vf);
         state = 0;
         }
       if(isdigit(c)){
@@ -340,7 +325,7 @@ void keypad_parser_subscriber(event_data ed, uint32_t event_subtype)
     keypad_digits_index = 0;
     k_ed.cp = NULL;
   }
-  event.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
+  pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
 }
 
 //
@@ -349,17 +334,17 @@ void keypad_parser_subscriber(event_data ed, uint32_t event_subtype)
 //
 
 void vfo_fire_event(uint32_t event_type, uint32_t event_subtype, event_data ed){
-    event.fire(event_type, event_subtype, ed);
+    pubsub.fire(event_type, event_subtype, ed);
 
 }
 
 //
-// Act on VFO parameter change
+// Act on vfo event
 //
 
 void vfo_subscriber(event_data ed, uint32_t event_subtype)
 {
-    vfo.subscriber(ed, event_subtype);
+  vfo.subscriber(ed, event_subtype);
 }
 
 //
@@ -412,7 +397,7 @@ void serial_commands()
     return;
   }
   c = Serial1.read();
-  event.fire(EVENT_SERIAL, EV_SUBTYPE_NONE, c);
+  pubsub.fire(EVENT_SERIAL, EV_SUBTYPE_NONE, c);
 }
 
 
@@ -448,15 +433,15 @@ void poll_switches()
 
 
     if(ptt != last_ptt){
-      event.fire(EVENT_VFO, (ptt) ? EV_SUBTYPE_PTT_PRESSED : EV_SUBTYPE_PTT_RELEASED, 0UL);
+      pubsub.fire(EVENT_VFO, (ptt) ? EV_SUBTYPE_PTT_PRESSED : EV_SUBTYPE_PTT_RELEASED, 0UL);
       last_ptt = ptt;
     }
     if(tune != last_tune){
-      event.fire(EVENT_VFO, (tune) ? EV_SUBTYPE_TUNE_PRESSED : EV_SUBTYPE_TUNE_RELEASED, 0UL);
+      pubsub.fire(EVENT_VFO, (tune) ? EV_SUBTYPE_TUNE_PRESSED : EV_SUBTYPE_TUNE_RELEASED, 0UL);
       last_tune = tune;
     }
     if(encoder_switch != last_encoder_switch){
-      event.fire(EVENT_ENCODER_KNOB, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), 0UL);
+      pubsub.fire(EVENT_ENCODER_KNOB, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), 0UL);
       last_encoder_switch = encoder_switch;
     }
 
@@ -487,7 +472,7 @@ void poll_switches()
     } else if((false == new_key_detect) && (true == last_key_detect)){
       last_key_detect = new_key_detect;
       // Fire keypad event
-      event.fire(EVENT_KEYPAD_PARSER, EV_SUBTYPE_NONE, scan_table[scan_code]);
+      pubsub.fire(EVENT_KEYPAD_PARSER, EV_SUBTYPE_NONE, scan_table[scan_code]);
     }
 
     if(!new_key_detect) { // Stop scanning when a key is pressed
@@ -538,7 +523,7 @@ void task_poll_one_ms(){
   // Toggle test output every millisecond
   digitalWrite(PIN_TEST_OUTPUT, (toggle ^= 1));
   // Send 1 millisecond event
-  event.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS, Time_slot);
+  pubsub.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS, Time_slot);
   // Advance to next time slot
   Time_slot.u32_val++;
   if(Time_slot.u32_val > 9)
@@ -554,7 +539,7 @@ void task_poll_one_ms(){
 
 void task_poll_hundred_ms()
 {
-  event.fire(EVENT_TICK, EV_SUBTYPE_TICK_HUNDRED_MS);
+  pubsub.fire(EVENT_TICK, EV_SUBTYPE_TICK_HUNDRED_MS);
 }
 
  

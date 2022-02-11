@@ -32,15 +32,15 @@ void SWITCHES::handler(event_data ed, uint32_t event_subtype)
             // Check for changes
 
             if(ptt != last_ptt){
-                (*event_fire)(EVENT_VFO, (ptt) ? EV_SUBTYPE_PTT_PRESSED : EV_SUBTYPE_PTT_RELEASED, ed_zero );
+                pubsub.fire(EVENT_VFO, (ptt) ? EV_SUBTYPE_PTT_PRESSED : EV_SUBTYPE_PTT_RELEASED, ed_zero );
                 last_ptt = ptt;
             }
             if(tune != last_tune){
-                (*event_fire)(EVENT_VFO, (tune) ? EV_SUBTYPE_TUNE_PRESSED : EV_SUBTYPE_TUNE_RELEASED, ed_zero );
+                pubsub.fire(EVENT_VFO, (tune) ? EV_SUBTYPE_TUNE_PRESSED : EV_SUBTYPE_TUNE_RELEASED, ed_zero );
                 last_tune = tune;
             }
             if(encoder_switch != last_encoder_switch){
-                (*event_fire)(EVENT_ENCODER_KNOB, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), ed_zero );
+                pubsub.fire(EVENT_ENCODER_KNOB, ((encoder_switch) ? EV_SUBTYPE_ENCODER_PRESSED : EV_SUBTYPE_ENCODER_RELEASED), ed_zero );
                 last_encoder_switch = encoder_switch;
             }
         }

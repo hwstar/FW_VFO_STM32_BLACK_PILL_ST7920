@@ -98,39 +98,6 @@ void VFO::update_clock_gen()
     si5351.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
 }
 
-//
-// Fire an event
-//
-
-void VFO::fire_event(uint32_t event_type, uint32_t event_subtype, uint32_t ev_data)
-{
-    
-    if(_event_callback != NULL){
-        event_data ed;
-        ed.u32_val = ev_data;
-        (*_event_callback)(event_type, event_subtype, ed);
-    }
-}
-void VFO::fire_event(uint32_t event_type, uint32_t event_subtype, uint8_t ev_data)
-{
-    
-    if(_event_callback != NULL){
-        event_data ed;
-        ed.u8_val = ev_data;
-        (*_event_callback)(event_type, event_subtype, ed);
-    }
-}
-
-void VFO::fire_event(uint32_t event_type, uint32_t event_subtype)
-{
-    
-    if(_event_callback != NULL){
-        event_data ed;
-        ed.u32_val = 0L;
-        (*_event_callback)(event_type, event_subtype, ed);
-    }
-}
-
 
 //
 // Update the display showing the TX state
@@ -138,11 +105,10 @@ void VFO::fire_event(uint32_t event_type, uint32_t event_subtype)
 
 void VFO::update_display_tx(uint8_t mode)
 {
-    if(_event_callback != NULL){
-        event_data ed;
-        ed.u8_val = mode;
-        (*_event_callback)(EVENT_DISPLAY, EV_SUBTYPE_TX_MODE, ed);
-    }
+    event_data ed;
+    ed.u8_val = mode;
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_TX_MODE, ed);
+
 }
 
 //
@@ -212,7 +178,7 @@ void VFO::mode_set(uint8_t mode)
     update_clock_gen();
 
     // Fire display event to update mode
-    fire_event(EVENT_DISPLAY, EV_SUBTYPE_SET_MODE, mode);
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_SET_MODE, mode);
 }
 
 //
@@ -227,7 +193,7 @@ void VFO::agc_set(uint8_t state)
         trx_save |= TRX_DISABLE_AGC;
     trx.write(trx_save);
     // Fire display event to update mode
-    fire_event(EVENT_DISPLAY, EV_SUBTYPE_SET_AGC, state);
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_SET_AGC, state);
 }
 
 //
@@ -289,7 +255,7 @@ bool VFO::set_freq (uint32_t freq)
     update_clock_gen();
 
     // Fire display event to update frequency
-    fire_event(EVENT_DISPLAY, EV_SUBTYPE_SET_FREQ, freq);
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_SET_FREQ, freq);
 
     return true;
 }
@@ -348,21 +314,18 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
 // Initialize VFO
 //
 
-bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint32_t, event_data)) 
+bool VFO::begin(uint32_t init_freq) 
 {
     digitalWrite(PIN_STM32_LED,1); // LED off
 
     uint8_t i;
-
-    // Save callback function address
-    _event_callback = event_callback;
 
 
     // SI5351 library calls Wire.begin, so it has to be the first thing initialized
 
 
     if(!si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
-        fire_event(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
     }
 
     // Initialize the TRX motherboard defaults
@@ -450,7 +413,7 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint32_t, e
     #endif
 
     // Initialize the band select 
-    band_select.begin(&bpf, &lpf, event_callback);
+    band_select.begin(&bpf, &lpf);
 
     bfo_carrier_freq = SECOND_IF_CARRIER;
     
@@ -464,7 +427,6 @@ bool VFO::begin(uint32_t init_freq, void (*event_callback)(uint32_t, uint32_t, e
     si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
     si5351.output_enable(clock_outputs[THIRD_LO_ID], 1);
-
 
     digitalWrite(PIN_STM32_LED, 0); // LED on
 
