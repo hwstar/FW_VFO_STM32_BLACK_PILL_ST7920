@@ -5,59 +5,65 @@
 #include <cmdparse.hpp>
 
 
-//
-// Throwaway code to test AGC on/off
-//
 
-bool keypad_agc_set(char *command_string, uint8_t command_string_index)
+static bool cmd_agc_set(char *command_parameter, uint8_t command_parameter_index)
 {
-  if(4 == command_string_index){
-    event_data ed;
-    ed.u8_val = (command_string[3] == '1');
-    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_AGC, ed);
-    return true;
-  }
-  else
-    return false;
-}
 
-typedef struct kp_commands {
-  char c_num[5];
-  char c_str[11];
-  bool (*cmd_function)(char *command_string, uint8_t command_string_index);
-} kp_commands;
-
-bool keypad_parse_command(char *command_string, uint8_t command_string_index, bool *cp_match)
-{
-  static kp_commands command_table[] = {
-  {"242","AGC", keypad_agc_set},
-  {"",""}
-  };
-  bool res = false;
-
-  static kp_commands *p_cte;
-  uint8_t cte_cmd_len;
-
-  if(!*cp_match){
-    for(p_cte = &command_table[0]; (cte_cmd_len = strlen(p_cte->c_num)); p_cte++){
-      if(cte_cmd_len == command_string_index){
-        if(!strncmp(p_cte->c_num, command_string, cte_cmd_len)){
-          *cp_match = true;
-          break;
-        }
-      }
+    if (1 == command_parameter_index)
+    {
+        event_data ed;
+        ed.u8_val = (command_parameter[0] == '1');
+        pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_AGC, ed);
+        return true;
     }
-  }
-  else {
-    res = (*p_cte->cmd_function)(command_string, command_string_index);
-  }
-
-  return res;
+    else
+        return false;
 }
 
 //
-// End of throwaway code
+// Parse the command digits one at a time
 //
+
+bool CMDPARSE::parse_command(char *keypad_string, uint8_t keypad_string_index)
+{
+    static const kp_commands command_table[] = {
+        {"242", "AGC", cmd_agc_set},
+        {"", ""}};
+    bool res = false;
+    static char command_string[16];
+    uint8_t command_string_index;
+    static const kp_commands *p_cte;
+    static uint8_t cte_cmd_len;
+
+    if (keypad_string_index < 2)
+        return false; // Must have prefix and at least 1 command digit
+
+    // Make a copy of the keypad string without the command prefix character
+    strncpy(command_string, keypad_string + 1, sizeof(command_string));
+    command_string[sizeof(command_string) - 1] = 0; // Zero the last buffer byte.
+    command_string_index = keypad_string_index - 1; // Create a new index value for the command
+
+    if (!cp_match)
+    {
+        for (p_cte = (&command_table[0]); (cte_cmd_len = strlen(p_cte->c_num)); p_cte++)
+        {
+            if (cte_cmd_len == command_string_index)
+            {
+                if (!strncmp(p_cte->c_num, command_string, cte_cmd_len))
+                {
+                    cp_match = true;
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        res = (*p_cte->cmd_function)(command_string + cte_cmd_len, command_string_index - cte_cmd_len);
+    }
+
+    return res;
+}
 
 void CMDPARSE::reset()
 {
@@ -65,141 +71,169 @@ void CMDPARSE::reset()
     f_count = 0;
     state = 0;
     cp_match = false;
-    command_string_index = 0;
+
     keypad_digits_index = 0;
-    command_string[0] = 0;
+
     memset(keypad_digits, 0, sizeof(keypad_digits));
     k_ed.cp = NULL;
     pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
-    
-
 }
-
 
 //
 // Parse incoming command tokens
 //
+
 void CMDPARSE::handler(event_data ed, uint32_t event_subtype)
 {
 
     char c = ed.char_val;
     uint8_t i;
-   
 
-
-    if(EV_SUBTYPE_TICK_MS == event_subtype)
+    if (EV_SUBTYPE_TICK_MS == event_subtype)
         return; // 1 mS not used
 
-    if(EV_SUBTYPE_NONE == event_subtype)
-        command_timer = 70;
+    // Reset command timer for each keypress
+    if (EV_SUBTYPE_NONE == event_subtype)
+        command_timer = CONFIG_COMMAND_TIMEOUT;
 
-    if(EV_SUBTYPE_TICK_HUNDRED_MS == event_subtype){
-        if(command_timer){
+    // Force reset after a timeout if state is non-zero
+    if (EV_SUBTYPE_TICK_HUNDRED_MS == event_subtype)
+    {
+        if (state && command_timer)
+        {
             command_timer--;
-            if(!command_timer){
+            if (!command_timer)
+            {
                 reset();
             }
         }
-            return;
+        return;
     }
-  
 
-    switch(state){
-        case 0: // Start of parsing, first character
-            reset();
-            if(isdigit(c)){
-                m = (uint32_t) (c - '0');
-                state = 1;
-            }
-            else if ('C' == c) { // Command?
-                state = 100;
-            }
-            break;
+    // Buffer the keypad digits
+    if (keypad_digits_index < sizeof(keypad_digits) - 1)
+    {
+        keypad_digits[keypad_digits_index++] = c;
+        keypad_digits[keypad_digits_index] = 0;
+    }
+    else // Keypad buffer full, discard the command
+        reset();
 
-        case 1: // Second frequency digit or decimal point
-            if(isdigit(c)){
-                m *= 10;
-                m += (uint32_t) (c - '0');
-                state = 2;
-            } else if ((c == '*')||(c == '.')){ // Decimal point or star?
-                state = 3;
-            
-            } else { // Abort
-                state = 0;
-            }
-            break;
+    //
+    // State machine for command parser
+    //
 
-        case 2: // Expect star or decimal point
-            if((c == '*')||(c == '.')){
-                state = 3;
-            } else {
-                state = 0;
-            }
-            break;
-
-        case 3: // Start parsing fractional part
-        if(isdigit(c)){
-            f *= 10;
-            f += (uint32_t) (c - '0');
+    switch (state)
+    {
+    case 0: // Start of parsing, first character
+        if (isdigit(c))
+        {
+            m = (uint32_t)(c - '0');
+            state = 1;
         }
-        if((f_count == 6) || (c == '#') || (c == '\r')){ // Check for complete frequency entry
-            if((c == '#')||(c == '\r')){ // Short entry by user
+        else if ('C' == c)
+        { // Command prefix?
+            state = 100;
+        }
+        break;
+
+        //
+        // Frequency entry states
+        //
+
+    case 1: // Second frequency digit or decimal point
+        if (isdigit(c))
+        {
+            m *= 10;
+            m += (uint32_t)(c - '0');
+            state = 2;
+        }
+        else if ((c == '*') || (c == '.'))
+        { // Decimal point or star?
+            state = 3;
+        }
+        else
+        { // Abort
+            reset();
+        }
+        break;
+
+    case 2: // Expect star or decimal point
+        if ((c == '*') || (c == '.'))
+        {
+            state = 3;
+        }
+        else
+        {
+            reset();
+        }
+        break;
+
+    case 3: // Start parsing fractional part
+        if (isdigit(c))
+        {
+            f *= 10;
+            f += (uint32_t)(c - '0');
+        }
+        if ((f_count == 6) || (c == '#') || (c == '\r'))
+        { // Check for complete frequency entry
+            if ((c == '#') || (c == '\r'))
+            { // Short entry by user
                 // Multiply by 10 accordingly
-                for(i = 0 ; i < 6 - f_count; i++){
+                for (i = 0; i < 6 - f_count; i++)
+                {
                     f *= 10;
                 }
                 // Calculate the frequency in Hz
                 vf = (m * 1000000) + f;
                 // Set the VFO frequency
                 pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_FREQ, vf);
-                state = 0;
+                reset();
             }
         }
-        if(isdigit(c)){
+        if (isdigit(c))
+        {
             f_count++;
-        } else if((c != '#')||(c == '\r')) {
-            state = 0;
+        }
+        else if ((c != '#') || (c == '\r'))
+        {
+            reset();
         }
         break;
 
         //
-        // Command state
+        // Command Entry state
         //
 
-        case 100: 
-            if(c == '#') // # aborts the command
-                state = 0;
-            else{
-                command_string[command_string_index++] = c;
-                command_string[command_string_index] = 0;
-                if(command_string_index == sizeof(command_string) - 1)
-                    state = 0;
-                else{
-                    if(keypad_parse_command(command_string, command_string_index, &cp_match))
-                        state = 0;
-                }
+    case 100:
+        if (c == '#') // # aborts the command
+            reset();
+        else
+        {
+            if (parse_command(keypad_digits, keypad_digits_index))
+            {
+                reset(); // Command completed
             }
-            break;
+        }
+        break;
 
-        default:
-            state = 0;
+    default:
+        reset();
     }
 
     //
-    // This code handles echoing the keypad digits to the display
+    // This code handles updating the display
     //
 
-    if(state != 0){
-        if( keypad_digits_index < sizeof(keypad_digits) - 1){
-            keypad_digits[keypad_digits_index++] = c;
-            k_ed.cp = keypad_digits;
-        }
-    } else {
-        // Done or error
-        memset(keypad_digits, 0, sizeof(keypad_digits));
-        keypad_digits_index = 0;
+    if (state != 0)
+    {
+        k_ed.cp = keypad_digits;
+    }
+    else
+    {
         k_ed.cp = NULL;
         command_timer = 0;
     }
+    // Update display
     pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
 }

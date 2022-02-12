@@ -58,6 +58,7 @@
 // PC15
 // 
 
+#define CONFIG_COMMAND_TIMEOUT 70 // 7 second command time out
 
 // Emission modes
 
