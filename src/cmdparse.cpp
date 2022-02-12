@@ -59,6 +59,22 @@ bool keypad_parse_command(char *command_string, uint8_t command_string_index, bo
 // End of throwaway code
 //
 
+void CMDPARSE::reset()
+{
+    f = m = 0;
+    f_count = 0;
+    state = 0;
+    cp_match = false;
+    command_string_index = 0;
+    keypad_digits_index = 0;
+    command_string[0] = 0;
+    memset(keypad_digits, 0, sizeof(keypad_digits));
+    k_ed.cp = NULL;
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
+    
+
+}
+
 
 //
 // Parse incoming command tokens
@@ -67,34 +83,35 @@ void CMDPARSE::handler(event_data ed, uint32_t event_subtype)
 {
 
     char c = ed.char_val;
-    event_data k_ed;
     uint8_t i;
-    static uint8_t keypad_digits_index;
-    static uint8_t command_string_index;
-    static bool cp_match;
-    static uint8_t state = 0;
-    static uint8_t f_count;
-    static uint32_t m,f,vf;
-    static char keypad_digits[16];
-    static char command_string[16];
+   
+
 
     if(EV_SUBTYPE_TICK_MS == event_subtype)
         return; // 1 mS not used
-    if(EV_SUBTYPE_TICK_HUNDRED_MS == event_subtype)
-        return; // Reserved for parser timers in the future
+
+    if(EV_SUBTYPE_NONE == event_subtype)
+        command_timer = 70;
+
+    if(EV_SUBTYPE_TICK_HUNDRED_MS == event_subtype){
+        if(command_timer){
+            command_timer--;
+            if(!command_timer){
+                reset();
+            }
+        }
+            return;
+    }
+  
 
     switch(state){
         case 0: // Start of parsing, first character
-            f = m = 0;
-            f_count = 0;
+            reset();
             if(isdigit(c)){
                 m = (uint32_t) (c - '0');
                 state = 1;
             }
             else if ('C' == c) { // Command?
-                cp_match = false;
-                command_string_index = 0;
-                command_string[0] = 0;
                 state = 100;
             }
             break;
@@ -173,14 +190,16 @@ void CMDPARSE::handler(event_data ed, uint32_t event_subtype)
     //
 
     if(state != 0){
-        if( keypad_digits_index < sizeof(keypad_digits) - 1){}
-        keypad_digits[keypad_digits_index++] = c;
-        k_ed.cp = keypad_digits;
+        if( keypad_digits_index < sizeof(keypad_digits) - 1){
+            keypad_digits[keypad_digits_index++] = c;
+            k_ed.cp = keypad_digits;
+        }
     } else {
         // Done or error
         memset(keypad_digits, 0, sizeof(keypad_digits));
         keypad_digits_index = 0;
         k_ed.cp = NULL;
+        command_timer = 0;
     }
     pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_KEYPAD_ENTRY, k_ed);
 }

@@ -417,7 +417,7 @@ bool VFO::begin(uint32_t init_freq)
 
     bfo_carrier_freq = SECOND_IF_CARRIER;
     
-    tuning_knob_increment = 100UL;
+    tuning_knob_increment = 1000UL;
     is_txing = false;
     test_mode = true;
     update_display_tx(is_txing);
