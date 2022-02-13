@@ -47,7 +47,7 @@ bool EEPROM_24CW640::read_page(uint16_t page_num, uint8_t *buffer)
 {   
     uint8_t addr[2];
     uint8_t index;
-    uint16_t page_base_addr = (page_num * EEPROM_PAGE_SIZE) & (EEPROM_BYTE_COUNT - 1);
+    uint16_t page_base_addr = (page_num * EEPROM_24CW640_PAGE_SIZE) & (EEPROM_24CW640_BYTE_COUNT - 1);
 
     // Calculate the address bytes
     addr[1] = (uint8_t) (page_base_addr & 0xFF);
@@ -60,10 +60,10 @@ bool EEPROM_24CW640::read_page(uint16_t page_num, uint8_t *buffer)
         return false;
 
     // Request the page
-    Wire.requestFrom(slave_addr, EEPROM_PAGE_SIZE);
+    Wire.requestFrom(slave_addr, EEPROM_24CW640_PAGE_SIZE);
    
     // Capture the read bytes as they become available
-    for(index = 0; index < EEPROM_PAGE_SIZE; index++){
+    for(index = 0; index < EEPROM_24CW640_PAGE_SIZE; index++){
         while(!Wire.available());
         buffer[index] = Wire.read();
     }
@@ -74,7 +74,7 @@ bool EEPROM_24CW640::write_page(uint16_t page_num, uint8_t *buffer)
 {
     uint8_t addr[2];
     uint8_t index;
-    uint16_t page_base_addr = (page_num * EEPROM_PAGE_SIZE) & (EEPROM_BYTE_COUNT - 1);
+    uint16_t page_base_addr = (page_num * EEPROM_24CW640_PAGE_SIZE) & (EEPROM_24CW640_BYTE_COUNT - 1);
     uint8_t wpr;
     bool ret;
     uint32_t millis_timeout;
@@ -104,8 +104,8 @@ bool EEPROM_24CW640::write_page(uint16_t page_num, uint8_t *buffer)
     // Perform write transaction
     Wire.beginTransmission(slave_addr); // Send page base address
     Wire.write(addr, 2);
-    Wire.write(buffer, EEPROM_PAGE_SIZE);
-    if((result = Wire.endTransmission()) != 0) // Restart for read
+    Wire.write(buffer, EEPROM_24CW640_PAGE_SIZE);
+    if((result = Wire.endTransmission()) != 0) 
         ret = false;
 
     

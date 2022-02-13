@@ -170,6 +170,9 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 // 7 bit I2C addresses
 //
 #define TRX_I2C_ADDR 0x38           // Transceiver control
+#define TRX_EEPROM_I2C_ADDR 0x50    // Transceiver EEPROM
+// 0x60 and 0x61 are reserved for the Si5351
+#define TRX_DAC_I2C_ADDR 0x62       // Transceiver DAC
 #define BPF_I2C_ADDR 0x39           // Band pass filter control
 #define LPF_I2C_ADDR 0x3A           // Low pass filter control
 

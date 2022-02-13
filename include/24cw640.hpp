@@ -1,5 +1,8 @@
 #ifndef __24CW640_HPP__
 
+#define EEPROM_24CW640_PAGE_SIZE 32
+#define EEPROM_24CW640_BYTE_COUNT 8192
+
 
 class EEPROM_24CW640 
 {
@@ -31,12 +34,10 @@ class EEPROM_24CW640
     // Set the write protect register
     bool set_wpr(uint8_t value);
 
-    
+
     int slave_addr;
     int result;
 
-    const int EEPROM_PAGE_SIZE = 32;
-    const int EEPROM_BYTE_COUNT = 8192;
     const uint8_t EEPROM_WRTE = 0x40;
     const uint32_t EEPROM_TIMEOUT = 10;
 

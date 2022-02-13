@@ -32,17 +32,25 @@
 #define EV_SUBTYPE_ENCODER_CW 17
 #define EV_SUBTYPE_ENCODER_CCW 18
 #define EV_SUBTYPE_SET_AGC 19
+#define EV_SUBTYPE_SET_TXGAIN 20
+#define EV_SUBTYPE_STORE_TXGAIN 21
 
 #define EV_SUBTYPE_ERR_NO_BPF 0x80000001
 #define EV_SUBTYPE_ERR_NO_LPF 0x80000002
 #define EV_SUBTYPE_ERR_NO_TRX 0x80000003  
 #define EV_SUBTYPE_ERR_NO_CLKGEN 0x80000004
+#define EV_SUBTYPE_ERR_EEPROM_PRESENT 0x80000005
+#define EV_SUBTYPE_ERR_EEPROM_READ 0x80000006
+#define EV_SUBTYPE_ERR_EEPROM_WRITE 0x80000007
+#define EV_SUBTYPE_ERR_DAC_PRESENT 0x80000008
+
 
 #define MAX_SUBS 32
 
 typedef union event_data {
     uint8_t u8_val;
     char char_val;
+    uint16_t u16_val;
     uint32_t u32_val;
     void *vp;
     char *cp;

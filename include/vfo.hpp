@@ -35,6 +35,7 @@ class VFO
     uint8_t trx_save;
     uint8_t last_ptt_mode;
     uint8_t band_index;
+    
 
     
     void update_clock_gen();
@@ -43,6 +44,8 @@ class VFO
     void agc_set(uint8_t state);
     void ptt_set(uint8_t mode);
     void mode_set(uint8_t mode);
+    void set_tx_gain(uint16_t gain);
+    void store_tx_gain();
   
 
 };

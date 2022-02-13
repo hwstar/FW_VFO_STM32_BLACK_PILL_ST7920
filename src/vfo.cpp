@@ -5,6 +5,8 @@
 #include <event.hpp>
 #include <bandsel.hpp>
 #include <vfo.hpp>
+#include <24cw640.hpp>
+#include <mcp4725.hpp>
 
 #include <si5351.h>
 
@@ -12,6 +14,13 @@
 #define TRX_SPKR_MUTE 0x08 
 #define TRX_DISABLE_AGC 0x2
 #define TRX_ENA_TUNE_OSC 0x1
+
+#define TRX_EEPROM_HEADER 0
+
+// Temporary placeholder for TX gain values
+static uint16_t tx_gain_calibration_values[8] = {1351,1325,1351,1425,1485,1485,1500,1675};
+    
+
 
 
 //
@@ -46,14 +55,16 @@ typedef struct band_info {
 
 const si5351_clock clock_outputs[3] = { SI5351_CLK0, SI5351_CLK1, SI5351_CLK2 };
 const si5351_drive drive_strengths[4] = { SI5351_DRIVE_2MA, SI5351_DRIVE_4MA, SI5351_DRIVE_6MA, SI5351_DRIVE_8MA };
-
+uint8_t page_buffer[EEPROM_24CW640_PAGE_SIZE];
 band_info band_table[8];
-
 Ext_Si5351 si5351;
 PCA9554 lpf(LPF_I2C_ADDR);
 PCA9554 bpf(BPF_I2C_ADDR);
 PCA9554 trx(TRX_I2C_ADDR);
 BANDSEL band_select;
+EEPROM_24CW640 trx_eeprom(TRX_EEPROM_I2C_ADDR);
+DAC_MCP4725 trx_dac(TRX_DAC_I2C_ADDR);
+
 
 
 //
@@ -197,6 +208,27 @@ void VFO::agc_set(uint8_t state)
 }
 
 //
+// Set tx gain for calibration purposes
+//
+
+void VFO::set_tx_gain(uint16_t gain)
+{
+
+    trx_dac.write_fast(gain);
+    tx_gain_calibration_values[band_index];
+}
+
+//
+// Store current TX gain for a given band
+//
+
+void VFO::store_tx_gain()
+{
+    return;
+}
+
+
+//
 // Get mode
 //
 
@@ -252,6 +284,9 @@ bool VFO::set_freq (uint32_t freq)
     }
     band_index = i;
 
+    // Set correct TX gain for selected band
+    trx_dac.write_fast(tx_gain_calibration_values[i]);
+
     update_clock_gen();
 
     // Fire display event to update frequency
@@ -277,11 +312,15 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             set_freq(ed.u32_val);
             mode_set(MODE_DEFAULT); // Set default for band
             break;
-
         case EV_SUBTYPE_SET_AGC:
             agc_set(ed.u8_val);
             break;
-
+        case EV_SUBTYPE_SET_TXGAIN:
+            set_tx_gain(ed.u16_val);
+            break;
+        case EV_SUBTYPE_STORE_TXGAIN:
+            store_tx_gain();
+            break;
         case EV_SUBTYPE_SET_MODE:
             mode_set(ed.u8_val);
             break;
@@ -303,6 +342,9 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
         case EV_SUBTYPE_TICK_MS:
             break;
 
+        case EV_SUBTYPE_TICK_HUNDRED_MS:
+            break;
+
         default:
             break;
 
@@ -320,7 +362,6 @@ bool VFO::begin(uint32_t init_freq)
 
     uint8_t i;
 
-
     // SI5351 library calls Wire.begin, so it has to be the first thing initialized
 
 
@@ -335,6 +376,23 @@ bool VFO::begin(uint32_t init_freq)
         trx.write(trx_save);
         trx.set_gpio_config(0x00); 
     }
+
+    // Test for the presence of the EEPROM
+    if(trx_eeprom.present()) {
+        // Read the header at page 0
+        if(!trx_eeprom.read_page(TRX_EEPROM_HEADER, page_buffer))
+            pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_EEPROM_READ);
+    }
+    else
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_EEPROM_PRESENT);
+
+    // Test for the presence of the trx DAC
+    if(!trx_dac.present()) {
+       pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_DAC_PRESENT);
+    }
+
+    trx_dac.write_fast(1351); // 1.65V
+   
 
 
 
@@ -414,6 +472,7 @@ bool VFO::begin(uint32_t init_freq)
 
     // Initialize the band select 
     band_select.begin(&bpf, &lpf);
+
 
     bfo_carrier_freq = SECOND_IF_CARRIER;
     

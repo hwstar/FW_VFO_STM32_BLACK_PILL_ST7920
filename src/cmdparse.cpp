@@ -5,15 +5,51 @@
 #include <cmdparse.hpp>
 
 
-
-static bool cmd_agc_set(char *command_parameter, uint8_t command_parameter_index)
+static bool parse_base_10_num(char digit, uint8_t digit_index, uint8_t max_digits, uint16_t &result)
 {
 
-    if (1 == command_parameter_index)
+    if(1 == digit_index){
+        result = 0;
+    }
+
+    if(isdigit(digit)){
+        result = result * 10;
+        result = result + (digit - 0x30);
+    }
+    else
+        return true;
+    
+    if(digit_index >= max_digits)
+        return true;
+
+    return false;
+}
+
+
+static bool cmd_agc_set(char *command_characters, uint8_t command_character_count)
+{
+
+    if (1 == command_character_count)
     {
         event_data ed;
-        ed.u8_val = (command_parameter[0] == '1');
+        ed.u8_val = (command_characters[0] == '1');
         pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_AGC, ed);
+        return true;
+    }
+    else
+        return false;
+}
+
+
+static bool cmd_txgain_set(char *command_characters, uint8_t command_character_count)
+{
+    static uint16_t num;
+
+    if (parse_base_10_num(command_characters[command_character_count - 1], command_character_count, 4, num))
+    {
+        event_data ed;
+        ed.u16_val = num;
+        pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_TXGAIN, ed);
         return true;
     }
     else
@@ -28,6 +64,7 @@ bool CMDPARSE::parse_command(char *keypad_string, uint8_t keypad_string_index)
 {
     static const kp_commands command_table[] = {
         {"242", "AGC", cmd_agc_set},
+        {"894", "TXG", cmd_txgain_set},
         {"", ""}};
     bool res = false;
     static char command_string[16];
