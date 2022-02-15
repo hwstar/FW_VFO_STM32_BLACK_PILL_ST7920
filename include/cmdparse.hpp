@@ -5,6 +5,7 @@ typedef struct kp_commands
     char c_num[5];
     char c_str[11];
     bool (*cmd_function)(char *command_string, uint8_t command_string_index);
+    bool param_required;
 } kp_commands;
 
 

@@ -25,6 +25,7 @@ static bool parse_base_10_num(char digit, uint8_t digit_index, uint8_t max_digit
     return false;
 }
 
+// Set agc on or off
 
 static bool cmd_agc_set(char *command_characters, uint8_t command_character_count)
 {
@@ -32,7 +33,7 @@ static bool cmd_agc_set(char *command_characters, uint8_t command_character_coun
     if (1 == command_character_count)
     {
         event_data ed;
-        ed.u8_val = (command_characters[0] == '1');
+        ed.u8_val = (command_characters[0] == '1'); // 1 = AGC on.
         pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_AGC, ed);
         return true;
     }
@@ -40,6 +41,7 @@ static bool cmd_agc_set(char *command_characters, uint8_t command_character_coun
         return false;
 }
 
+// Set tx gain
 
 static bool cmd_txgain_set(char *command_characters, uint8_t command_character_count)
 {
@@ -56,6 +58,23 @@ static bool cmd_txgain_set(char *command_characters, uint8_t command_character_c
         return false;
 }
 
+static bool cmd_mode_usb(char *command_characters, uint8_t command_character_count)
+{
+    event_data ed;
+    ed.u8_val = MODE_USB;
+    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_MODE, ed);
+    return true;
+
+}
+
+static bool cmd_mode_lsb(char *command_characters, uint8_t command_character_count)
+{
+    event_data ed;
+    ed.u8_val = MODE_LSB;
+    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_MODE, ed);
+    return true;
+}
+
 //
 // Parse the command digits one at a time
 //
@@ -63,9 +82,12 @@ static bool cmd_txgain_set(char *command_characters, uint8_t command_character_c
 bool CMDPARSE::parse_command(char *keypad_string, uint8_t keypad_string_index)
 {
     static const kp_commands command_table[] = {
-        {"242", "AGC", cmd_agc_set},
-        {"894", "TXG", cmd_txgain_set},
-        {"", ""}};
+        {"242", "AGC", cmd_agc_set, true},
+        {"572", "LSB", cmd_mode_lsb, false},
+        {"872", "USB", cmd_mode_usb, false},
+        {"894", "TXG", cmd_txgain_set, true},
+        {"", ""}
+        };
     bool res = false;
     static char command_string[16];
     uint8_t command_string_index;
@@ -93,6 +115,13 @@ bool CMDPARSE::parse_command(char *keypad_string, uint8_t keypad_string_index)
                 }
             }
         }
+        if(cp_match && (false == p_cte->param_required)){ 
+            // No parameter reqired
+            (*p_cte->cmd_function)(command_string + cte_cmd_len, command_string_index - cte_cmd_len);
+            return true; // Done with this command
+        }
+            
+
     }
     else
     {
