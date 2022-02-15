@@ -58,6 +58,8 @@
 // PC15
 // 
 
+#define SYSTEM_NAME  "LEFTY TRX"
+
 #define CONFIG_COMMAND_TIMEOUT 70 // 7 second command time out
 
 // Emission modes
@@ -76,32 +78,56 @@
 #define CLK_SOURCE_CAL_VALUE -4560 
 
 
+/*
+* TRX eeprom constants to be stored in the on-board EEPROM
+*/
+
+//#define INITIALIZE_TRX_EEPROM // Define to force initialization of the TRX EEPROM using the constants below
+
 
 #define FIRST_IF_UPPER_M6DB 45106416 // First IF upper -6db point MCF passband
 #define FIRST_IF_LOWER_M6DB 45093583  // First IF lower -6db point MCF passband
 
 
 #define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6db point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12286225 // Second IF lower -6db point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12284950 // Second IF lower -6db point crystal filter passband
 
-//
-// Calculated from above
-//
+// Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
+// R1713 set to 475mV p-p at TP1701. These constants are used to flatten out the TX power across all bands
+// from the TRX motherboard through the low pass filter bank, the power amplifier, and the low pass filter bank.
+// If any of these boards are swapped or re-ajusted, these gain settings will need to be updated.
+
+
+// These constants equate to are the DAC codes needed to produce an output voltage on the TRX DAC, U401
+// which sets the gain of the 12.288 IF amplifiers.
+
+// TRX DAC U401 is referenced to 5.0V and has 4096 steps. The voltage per step is therefore 1.22mV.
+
+#define TRX_TXGAIN_160M 1351
+#define TRX_TXGAIN_80M 1335
+#define TRX_TXGAIN_40M 1351
+#define TRX_TXGAIN_20M 1425
+#define TRX_TXGAIN_17M 1485
+#define TRX_TXGAIN_15M 1485
+#define TRX_TXGAIN_12M 1500
+#define TRX_TXGAIN_10M 1675
+
+
+
+// Calculated from the first IF and second IF constants above
 
 #define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
 #define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
 
 #define FIRST_IF_BW6DB (FIRST_IF_UPPER_M6DB - FIRST_IF_LOWER_M6DB )
-#define FIRST_IF_FCENTER  ((FIRST_IF_BW6DB/2)+FIRST_IF_LOWER_M6DB )
+#define FIRST_IF_FCENTER  ((FIRST_IF_BW6DB / 2) + FIRST_IF_LOWER_M6DB )
 
 #define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
 
 
-
-
-
-
-
+/*
+* END TRX eeprom constants
+*/
 
 
 // Band bits
@@ -162,17 +188,17 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 #define FIRST_LO_ID 0               // Is the first IF to second if conversion oscillator in RX and the Carrier oscillator in TX
 #define SECOND_LO_ID 1              // Is the BFO in RX, and the second if to first IF conversion oscillator in TX
-#define THIRD_LO_ID 2               // Is the VFO injection oscillator from the first IF to the desired band
+#define THIRD_LO_ID 2               // Is the VFO "Transverter" injection oscillator from the first IF to the desired band
 
      
 //
-// I2C Slaves
+// I2C Device addresses
 // 7 bit I2C addresses
 //
 #define TRX_I2C_ADDR 0x38           // Transceiver control
 #define TRX_EEPROM_I2C_ADDR 0x50    // Transceiver EEPROM
 // 0x60 and 0x61 are reserved for the Si5351
-#define TRX_DAC_I2C_ADDR 0x62       // Transceiver DAC
+#define TRX_DAC_I2C_ADDR 0x62       // Transceiver MCP4725 TXGAIN DAC
 #define BPF_I2C_ADDR 0x39           // Band pass filter control
 #define LPF_I2C_ADDR 0x3A           // Low pass filter control
 

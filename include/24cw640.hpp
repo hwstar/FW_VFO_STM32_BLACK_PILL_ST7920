@@ -22,10 +22,10 @@ class EEPROM_24CW640
     int get_result();
    
     // Read a page of data (32 bytes)
-    bool read_page(uint16_t page_num, uint8_t *buffer);
+    bool read_page(uint16_t page_num, void *buffer);
 
     // Write a page of data (32 bytes)
-    bool write_page(uint16_t page_num, uint8_t *buffer);
+    bool write_page(uint16_t page_num, void *buffer);
 
     private:
     // Get the write protect register

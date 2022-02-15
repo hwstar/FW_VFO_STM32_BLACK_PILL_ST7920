@@ -15,11 +15,39 @@
 #define TRX_DISABLE_AGC 0x2
 #define TRX_ENA_TUNE_OSC 0x1
 
-#define TRX_EEPROM_HEADER 0
 
-// Temporary placeholder for TX gain values
-static uint16_t tx_gain_calibration_values[8] = {1351,1325,1351,1425,1485,1485,1500,1675};
-    
+// TRX EEPROM initialization values for IF information
+
+static const trx_eeprom_master_info trx_eeprom_master_init = {
+        RECNAME_MASTER,
+        SYSTEM_NAME      
+};
+
+static const trx_eeprom_if_info trx_eeprom_if_init = {
+    RECNAME_TRXIF, // Record name
+    SECOND_IF_CARRIER, // Second IF carrier
+    SECOND_IF_BW6DB, // Second IF bandwidth
+    FIRST_IF_BW6DB, // First IF 6dB bandwidth
+    FIRST_IF_FCENTER, // First IF center frequency
+    FIRST_TO_SECOND_IF_DELTA //  First IF to second IF delta
+};
+
+// TRX EEPROM initialization values for TX fain
+
+static const trx_eeprom_txgain_info trx_eeprom_txgain_init = {
+    RECNAME_TXGAIN, // Record name
+    { // Gain constants
+        TRX_TXGAIN_160M,
+        TRX_TXGAIN_80M,
+        TRX_TXGAIN_40M,
+        TRX_TXGAIN_20M,
+        TRX_TXGAIN_17M,
+        TRX_TXGAIN_15M,
+        TRX_TXGAIN_12M,
+        TRX_TXGAIN_10M
+    }
+
+};
 
 
 
@@ -86,18 +114,19 @@ void VFO::update_clock_gen()
     // Calculate the injection frequencies
     //
 
-    high_injection_freq = vfo_freq + FIRST_IF_FCENTER;
-    low_injection_freq = FIRST_IF_FCENTER-vfo_freq;
+    high_injection_freq = vfo_freq + trx_if_info.first_if_fcenter;
+    low_injection_freq = trx_if_info.first_if_fcenter-vfo_freq;
 
     if(is_txing){
         // First LO gets the carrier frequency
         first_lo_freq = bfo_carrier_freq;
-        second_lo_freq = FIRST_TO_SECOND_IF_DELTA; // One inversion here
+        second_lo_freq = trx_if_info.first_to_second_if_delta; // One inversion here
+
         third_lo_freq = (is_usb)? high_injection_freq : low_injection_freq; // DEBUG
 
     } else { // RX
         // Second LO gets the carrier frequency.
-        first_lo_freq = FIRST_TO_SECOND_IF_DELTA; // One inversion here
+        first_lo_freq = trx_if_info.first_to_second_if_delta; // One inversion here
         second_lo_freq = bfo_carrier_freq; 
         third_lo_freq = (is_usb)? high_injection_freq : low_injection_freq; // DEBUG
     }
@@ -215,7 +244,7 @@ void VFO::set_tx_gain(uint16_t gain)
 {
 
     trx_dac.write_fast(gain);
-    tx_gain_calibration_values[band_index];
+    trx_gain_info.tx_gain_values[band_index];
 }
 
 //
@@ -285,7 +314,7 @@ bool VFO::set_freq (uint32_t freq)
     band_index = i;
 
     // Set correct TX gain for selected band
-    trx_dac.write_fast(tx_gain_calibration_values[i]);
+    trx_dac.write_fast(trx_gain_info.tx_gain_values[i]);
 
     update_clock_gen();
 
@@ -361,6 +390,7 @@ bool VFO::begin(uint32_t init_freq)
     digitalWrite(PIN_STM32_LED,1); // LED off
 
     uint8_t i;
+    bool eeprom_invalid = false;
 
     // SI5351 library calls Wire.begin, so it has to be the first thing initialized
 
@@ -378,24 +408,72 @@ bool VFO::begin(uint32_t init_freq)
     }
 
     // Test for the presence of the EEPROM
+    have_trx_eeprom = false;
     if(trx_eeprom.present()) {
         // Read the header at page 0
-        if(!trx_eeprom.read_page(TRX_EEPROM_HEADER, page_buffer))
+        if(!trx_eeprom.read_page(RECNUM_EEPROM_MASTER, page_buffer))
             pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_EEPROM_READ);
+        have_trx_eeprom = true;
     }
     else
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_EEPROM_PRESENT);
 
     // Test for the presence of the trx DAC
+    have_trx_dac = false;
     if(!trx_dac.present()) {
        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_DAC_PRESENT);
+    } else {
+        have_trx_dac = true;
     }
 
-    trx_dac.write_fast(1351); // 1.65V
-   
+    //
+    // Initialization of system constants
+    //
+
+    
+
+    // If initialization is forced from config.hpp
+    #ifdef INITIALIZE_TRX_EEPROM
+    trx_master_info = trx_eeprom_master_init;
+    trx_gain_info = trx_eeprom_txgain_init;
+    trx_if_info = trx_eeprom_if_init;
+    trx_eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
+    trx_eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+    trx_eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
+    #else
+    // Normal initialization
+    if(have_trx_eeprom){
+        trx_eeprom.read_page(RECNUM_EEPROM_MASTER, &trx_master_info);
+        if(strncmp(trx_master_info.recordname, RECNAME_MASTER, sizeof(RECNAME_MASTER)))
+            eeprom_invalid = true;
+
+        trx_eeprom.read_page(RECNUM_EEPROM_IF, &trx_if_info);
+        if(strncmp(trx_if_info.recordname, RECNAME_TRXIF, sizeof(RECNAME_TRXIF)))
+            eeprom_invalid = true;
+        
+        trx_eeprom.read_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+        if(strncmp(trx_gain_info.recordname, RECNAME_TXGAIN, sizeof(RECNAME_TXGAIN)))
+            eeprom_invalid = true; 
+    }
+
+    if(!have_trx_eeprom || eeprom_invalid){
+        // Load constants from config.hpp 
+        trx_master_info = trx_eeprom_master_init;
+        trx_gain_info = trx_eeprom_txgain_init;
+        trx_if_info = trx_eeprom_if_init;
+        // If we have the trx EEPROM, initialize it here
+        if(have_trx_eeprom){
+            trx_eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
+            trx_eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+            trx_eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
+        }
+
+    }   
+    #endif
 
 
 
+    
     for(i = 0; i < 3; i++) {
         // Default freq 10 MHz
         si5351.set_freq_hz(10000000, clock_outputs[i]);
@@ -474,7 +552,7 @@ bool VFO::begin(uint32_t init_freq)
     band_select.begin(&bpf, &lpf);
 
 
-    bfo_carrier_freq = SECOND_IF_CARRIER;
+    bfo_carrier_freq = trx_if_info.second_if_carrier;
     
     tuning_knob_increment = 1000UL;
     is_txing = false;
