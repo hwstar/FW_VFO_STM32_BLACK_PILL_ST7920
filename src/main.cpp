@@ -225,10 +225,10 @@ void serial_output_subscriber(event_data ed, uint32_t event_subtype)
       case EV_SUBTYPE_SET_FREQ:
         Serial1.printf("F:%lu\r\n", ed.u32_val);
         break;
-      case EV_SUBTYPE_SET_MODE:
+      case EV_SUBTYPE_SET_SIDEBAND:
         Serial1.printf("M:%u\r\n", ed.u8_val);
         break;
-      case EV_SUBTYPE_TX_MODE:
+      case EV_SUBTYPE_TRX_MODE:
         Serial1.printf("T:%u\r\n", ed.u8_val);
         break;
 

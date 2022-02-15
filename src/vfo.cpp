@@ -147,7 +147,7 @@ void VFO::update_display_tx(uint8_t mode)
 {
     event_data ed;
     ed.u8_val = mode;
-    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_TX_MODE, ed);
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_TRX_MODE, ed);
 
 }
 
@@ -206,19 +206,19 @@ uint8_t VFO::ptt_get()
 //
 // Set sideband
 //
-void VFO::mode_set(uint8_t mode)
+void VFO::sideband_set(uint8_t mode)
 {
     if(is_txing)
         return;
 
     if(MODE_DEFAULT == mode)
-        mode = band_table[band_index].usb_def; // Default for band
+        mode = band_table[band_index].usb_def; // Sideband default for band
 
     is_usb = (bool) mode;
     update_clock_gen();
 
     // Fire display event to update mode
-    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_SET_MODE, mode);
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_SET_SIDEBAND, mode);
 }
 
 //
@@ -339,7 +339,7 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             break;
         case EV_SUBTYPE_SET_FREQ:
             set_freq(ed.u32_val);
-            mode_set(MODE_DEFAULT); // Set default for band
+            sideband_set(MODE_DEFAULT); // Set default for band
             break;
         case EV_SUBTYPE_SET_AGC:
             agc_set(ed.u8_val);
@@ -350,8 +350,8 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
         case EV_SUBTYPE_STORE_TXGAIN:
             store_tx_gain();
             break;
-        case EV_SUBTYPE_SET_MODE:
-            mode_set(ed.u8_val);
+        case EV_SUBTYPE_SET_SIDEBAND:
+            sideband_set(ed.u8_val);
             break;
         case EV_SUBTYPE_PTT_PRESSED:
             ptt_set(RADIO_TX);
@@ -558,7 +558,7 @@ bool VFO::begin(uint32_t init_freq)
     update_display_tx(is_txing);
     set_freq(init_freq);
     agc_set(1);
-    mode_set(MODE_DEFAULT);
+    sideband_set(MODE_DEFAULT);
     si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);
     si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
     si5351.output_enable(clock_outputs[THIRD_LO_ID], 1);

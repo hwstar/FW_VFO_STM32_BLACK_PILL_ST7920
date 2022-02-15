@@ -5,6 +5,9 @@
 #include <event.hpp>
 #include <display.hpp>
 
+
+#define DISPLAY_NORMAL 0
+
 /******************************************
 * Definitions
 ******************************************/
@@ -104,8 +107,8 @@ extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_
     case U8X8_MSG_GPIO_I2C_DATA:
       if ( arg_int == 0 )
       {
-	pinMode(u8x8_GetPinValue(u8x8, msg), OUTPUT);
-	digitalWrite(u8x8_GetPinValue(u8x8, msg), 0);
+	      pinMode(u8x8_GetPinValue(u8x8, msg), OUTPUT);
+	      digitalWrite(u8x8_GetPinValue(u8x8, msg), 0);
       }
       else
       {
@@ -155,6 +158,7 @@ void DISPLAY_DRIVER::begin()
 {
     st7920.begin();
     keypad_keys = NULL;
+    display_mode = DISPLAY_NORMAL;
 
 }
 
@@ -162,7 +166,7 @@ void DISPLAY_DRIVER::begin()
 // Refresh the display
 //
 
-void DISPLAY_DRIVER::refresh()
+void DISPLAY_DRIVER::refresh_normal_operation()
 {
     const char *modestr;
     const char *radiostr;
@@ -182,7 +186,7 @@ void DISPLAY_DRIVER::refresh()
 
     snprintf(freqall, sizeof(freqall) - 1,"%lu.%06lu", mhz, modulus);
 
-    if(mode == MODE_USB)
+    if(sideband == MODE_USB)
         modestr = "USB";
     else
         modestr = "LSB";
@@ -192,7 +196,7 @@ void DISPLAY_DRIVER::refresh()
     else
         agcstr = "";
     
-    switch(tx_mode){
+    switch(trx_mode){
         case RADIO_RX:
             radiostr = "RX";
             break;
@@ -222,6 +226,19 @@ void DISPLAY_DRIVER::refresh()
 
 }
 
+void DISPLAY_DRIVER::refresh()
+{
+  switch(display_mode){
+    case DISPLAY_NORMAL:
+      refresh_normal_operation();
+      break;
+
+    default:
+      refresh_normal_operation();
+      break;
+  }
+}
+
 //
 // Called from event.cpp when there is something to update
 //
@@ -232,14 +249,14 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
         case EV_SUBTYPE_SET_FREQ:
             freq = ed.u32_val;
             break;
-        case EV_SUBTYPE_SET_MODE:
-            mode = ed.u8_val;
+        case EV_SUBTYPE_TRX_MODE:
+            trx_mode = ed.u8_val;
+            break;
+        case EV_SUBTYPE_SET_SIDEBAND:
+            sideband = ed.u8_val;
             break;
         case EV_SUBTYPE_SET_AGC:
             agc_state = ed.u8_val;
-            break;
-        case EV_SUBTYPE_TX_MODE:
-            tx_mode = ed.u8_val;
             break;
         case EV_SUBTYPE_KEYPAD_ENTRY:
             keypad_keys = ed.cp;

@@ -62,7 +62,7 @@ static bool cmd_mode_usb(char *command_characters, uint8_t command_character_cou
 {
     event_data ed;
     ed.u8_val = MODE_USB;
-    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_MODE, ed);
+    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_SIDEBAND, ed);
     return true;
 
 }
@@ -71,7 +71,7 @@ static bool cmd_mode_lsb(char *command_characters, uint8_t command_character_cou
 {
     event_data ed;
     ed.u8_val = MODE_LSB;
-    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_MODE, ed);
+    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_SIDEBAND, ed);
     return true;
 }
 

@@ -78,7 +78,7 @@ class VFO
     bool set_freq (uint32_t freq); 
     void agc_set(uint8_t state);
     void ptt_set(uint8_t mode);
-    void mode_set(uint8_t mode);
+    void sideband_set(uint8_t mode);
     void set_tx_gain(uint16_t gain);
     void store_tx_gain();
   
