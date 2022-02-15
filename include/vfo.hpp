@@ -62,7 +62,6 @@ class VFO
     uint32_t vfo_freq;
     uint32_t high_injection_freq;
     uint32_t low_injection_freq;
-    uint32_t bfo_carrier_freq;
     uint32_t tuning_knob_increment;
     int32_t tx_filter_offset;
     uint8_t trx_save;

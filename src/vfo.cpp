@@ -119,7 +119,7 @@ void VFO::update_clock_gen()
 
     if(is_txing){
         // First LO gets the carrier frequency
-        first_lo_freq = bfo_carrier_freq;
+        first_lo_freq = trx_if_info.second_if_carrier;
         second_lo_freq = trx_if_info.first_to_second_if_delta; // One inversion here
 
         third_lo_freq = (is_usb)? high_injection_freq : low_injection_freq; // DEBUG
@@ -127,7 +127,7 @@ void VFO::update_clock_gen()
     } else { // RX
         // Second LO gets the carrier frequency.
         first_lo_freq = trx_if_info.first_to_second_if_delta; // One inversion here
-        second_lo_freq = bfo_carrier_freq; 
+        second_lo_freq = trx_if_info.second_if_carrier; 
         third_lo_freq = (is_usb)? high_injection_freq : low_injection_freq; // DEBUG
     }
     //
@@ -551,8 +551,6 @@ bool VFO::begin(uint32_t init_freq)
     // Initialize the band select 
     band_select.begin(&bpf, &lpf);
 
-
-    bfo_carrier_freq = trx_if_info.second_if_carrier;
     
     tuning_knob_increment = 1000UL;
     is_txing = false;
