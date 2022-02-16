@@ -50,7 +50,7 @@
 // PA0
 // PA2
 // PA3
-// PA4  
+// PA4
 // PA11 - USB DM
 // PA12 - USB DP
 // PA15
@@ -61,6 +61,7 @@
 #define SYSTEM_NAME  "LEFTY TRX"
 
 #define CONFIG_COMMAND_TIMEOUT 70 // 7 second command time out
+#define CONFIG_TX_FAN_THRESH_SEC 30 // TX fan will turn on after this key down exceeds this time in seconds.
 
 // Emission modes
 

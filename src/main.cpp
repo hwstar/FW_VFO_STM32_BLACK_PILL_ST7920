@@ -14,6 +14,7 @@
 #include <display.hpp>
 #include <vfo.hpp>
 #include <cmdparse.hpp>
+#include <txprotect.hpp>
 
 
 
@@ -44,6 +45,8 @@ DISPLAY_DRIVER display;
 CMDPARSE cmdparse;
 // Error handler
 ERROR_HANDLER error;
+// Transmitter protection
+TX_PROTECT txprotect;
 
 
 // 10ms Time slot
@@ -117,13 +120,12 @@ void setup()
   switches.begin(0);
   // Initialize Keypad
   keypad.begin(2);
-
-
+  // Initialize txprotect
+  txprotect.begin();
   // Initialize Encoder
   void encoder_interrupt_handler();
   encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); });
-
-  // Initialize display object
+  // Initialize display 
   display.begin();
 
   // Add subscribers to the event object
@@ -135,6 +137,7 @@ void setup()
   void keypad_switches_subscriber(event_data ed, uint32_t event_subtype);
   void cmdparse_subscriber(event_data ed, uint32_t event_subtype);
   void error_subscriber(event_data ed, uint32_t event_subtype);
+  void txprotect_subscriber(event_data ed, uint32_t event_subtype);
 
   pubsub.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
   pubsub.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB); // Knob press = increment change
@@ -144,6 +147,7 @@ void setup()
   pubsub.subscribe(keypad_switches_subscriber, EVENT_TICK);
   pubsub.subscribe(cmdparse_subscriber, EVENT_KEYPAD_PARSER|EVENT_SERIAL|EVENT_TICK);
   pubsub.subscribe(error_subscriber, EVENT_ERROR);
+  pubsub.subscribe(txprotect_subscriber, EVENT_VFO|EVENT_TICK);
   
   // Initialize vfo object
   // Events must be initialzed first for default freqency and mode to be displayed.
@@ -232,6 +236,16 @@ void error_subscriber(event_data ed, uint32_t event_subtype)
 {
   error.handler(ed, event_subtype);
 }
+
+//
+// Send events to txprotect
+//
+
+void txprotect_subscriber(event_data ed, uint32_t event_subtype)
+{
+  txprotect.handler(ed, event_subtype);
+}
+
 
 //
 // Send serial output on certain events
