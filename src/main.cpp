@@ -10,6 +10,7 @@
 #include <keypad.hpp>
 #include <comm.hpp>
 #include <encoder.hpp>
+#include <error.hpp>
 #include <display.hpp>
 #include <vfo.hpp>
 #include <cmdparse.hpp>
@@ -41,6 +42,8 @@ ENCODER encoder;
 DISPLAY_DRIVER display;
 // Command parser
 CMDPARSE cmdparse;
+// Error handler
+ERROR_HANDLER error;
 
 
 // 10ms Time slot
@@ -106,6 +109,9 @@ void setup()
   Serial1.begin(115200);
   Serial1.setTimeout(10000);
   Serial1.println("POR");
+
+  // Error handler initialization
+  error.begin();
   
   // Initialize Switches
   switches.begin(0);
@@ -128,6 +134,8 @@ void setup()
   void vfo_subscriber(event_data, uint32_t);
   void keypad_switches_subscriber(event_data ed, uint32_t event_subtype);
   void cmdparse_subscriber(event_data ed, uint32_t event_subtype);
+  void error_subscriber(event_data ed, uint32_t event_subtype);
+
   pubsub.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
   pubsub.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB); // Knob press = increment change
   pubsub.subscribe(display_subscriber, EVENT_DISPLAY|EVENT_TICK);
@@ -135,6 +143,7 @@ void setup()
   pubsub.subscribe(vfo_subscriber, EVENT_VFO|EVENT_TICK);
   pubsub.subscribe(keypad_switches_subscriber, EVENT_TICK);
   pubsub.subscribe(cmdparse_subscriber, EVENT_KEYPAD_PARSER|EVENT_SERIAL|EVENT_TICK);
+  pubsub.subscribe(error_subscriber, EVENT_ERROR);
   
   // Initialize vfo object
   // Events must be initialzed first for default freqency and mode to be displayed.
@@ -213,6 +222,15 @@ void keypad_switches_subscriber(event_data ed, uint32_t event_subtype)
 void cmdparse_subscriber(event_data ed, uint32_t event_subtype)
 {
   cmdparse.handler(ed, event_subtype);
+}
+
+//
+// Send error events to the error handler
+//
+
+void error_subscriber(event_data ed, uint32_t event_subtype)
+{
+  error.handler(ed, event_subtype);
 }
 
 //

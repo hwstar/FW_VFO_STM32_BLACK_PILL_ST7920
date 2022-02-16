@@ -406,6 +406,11 @@ bool VFO::begin(uint32_t init_freq)
         trx.write(trx_save);
         trx.set_gpio_config(0x00); 
     }
+    else { 
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_TRX); // TRX board not present
+    }
+
+
 
     // Test for the presence of the EEPROM
     have_trx_eeprom = false;
@@ -417,6 +422,8 @@ bool VFO::begin(uint32_t init_freq)
     }
     else
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_EEPROM_PRESENT);
+
+  
 
     // Test for the presence of the trx DAC
     have_trx_dac = false;

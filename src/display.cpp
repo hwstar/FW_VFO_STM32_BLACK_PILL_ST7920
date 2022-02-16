@@ -3,10 +3,12 @@
 #include <SPI.h>
 #include <config.hpp>
 #include <event.hpp>
+#include <error.hpp>
 #include <display.hpp>
 
 
 #define DISPLAY_NORMAL 0
+#define DISPLAY_ERROR 100
 
 /******************************************
 * Definitions
@@ -226,11 +228,41 @@ void DISPLAY_DRIVER::refresh_normal_operation()
 
 }
 
+//
+// Display error message
+//
+
+void DISPLAY_DRIVER::refresh_error_message()
+{
+  // Update the display
+  char errnum_str[20];
+  snprintf(errnum_str, sizeof(errnum_str) - 1,"%u", p_err_info->errcode);
+
+  st7920.firstPage();
+  do {
+      /* all graphics commands have to appear within the loop body. */    
+      st7920.setFont(u8g2_font_ncenB14_tr);
+      st7920.drawStr(0, 20, "Error");
+      st7920.drawStr(100, 20, errnum_str);
+      st7920.setFont(u8g2_font_ncenB08_tr);
+      st7920.drawStr(0, 40, p_err_info->line_1);
+      st7920.drawStr(0, 60, p_err_info->line_2);
+  } while ( st7920.nextPage() );
+
+
+  if(p_err_info->errlevel == ERROR_LEVEL_HARD)
+    for(;;); // Loop forever on hard error
+}
+
 void DISPLAY_DRIVER::refresh()
 {
   switch(display_mode){
     case DISPLAY_NORMAL:
       refresh_normal_operation();
+      break;
+
+    case DISPLAY_ERROR:
+      refresh_error_message();
       break;
 
     default:
@@ -265,6 +297,10 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
             break;
         case EV_SUBTYPE_TICK_HUNDRED_MS:
             this->refresh(); 
+            break;
+        case EV_SUBTYPE_DISPLAY_ERROR:
+            p_err_info = (ed_error_info *) ed.vp;
+            display_mode = DISPLAY_ERROR;
             break;
             
         default:
