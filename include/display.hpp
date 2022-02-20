@@ -11,14 +11,14 @@ class DISPLAY_DRIVER
 
     private:
     uint32_t freq;
+    uint32_t tuning_increment;
     uint8_t trx_mode;
     uint8_t display_mode;
     uint8_t sideband;
     uint8_t agc_state;
     char *keypad_keys;
     ed_error_info *p_err_info;
-    
-    
+
 };
 
 #define __DISPLAY_HPP__

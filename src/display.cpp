@@ -176,6 +176,7 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     const char *clear12 = "            ";
     char freqall[20];
     char line40[20];
+    char tuning_increment_str[6];
 
     
 
@@ -211,6 +212,15 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         default:
             radiostr = "";
     }
+    if(tuning_increment <= 1000 && tuning_increment != 0){
+      if(tuning_increment == 1000)
+        strncpy(tuning_increment_str,"1k", 3);
+      else
+        sprintf(tuning_increment_str, "%d", tuning_increment);
+    }
+    else
+      strncpy(tuning_increment_str, "TIE", 4); // Tuning increment error
+
 
     // Update the display
 
@@ -222,8 +232,9 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         st7920.setFont(u8g2_font_ncenB08_tr);
         st7920.drawStr(100, 20, modestr);
         st7920.drawStr(0, 40, line40);
-        st7920.drawStr(70, 60, agcstr);
-        st7920.drawStr(100, 60, radiostr);
+        st7920.drawStr(55, 60, tuning_increment_str);
+        st7920.drawStr(80, 60, agcstr);
+        st7920.drawStr(110, 60, radiostr);
     } while ( st7920.nextPage() );
 
 }
@@ -301,6 +312,9 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
         case EV_SUBTYPE_DISPLAY_ERROR:
             p_err_info = (ed_error_info *) ed.vp;
             display_mode = DISPLAY_ERROR;
+            break;
+        case EV_SUBTYPE_SET_TUNING_INCREMENT:
+            tuning_increment = ed.u16_val;
             break;
             
         default:

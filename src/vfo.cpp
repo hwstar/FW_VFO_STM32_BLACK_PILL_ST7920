@@ -276,7 +276,18 @@ uint32_t VFO::incr_get()
     return tuning_knob_increment;
 }
 
+//
+// Finction to fire display update on tuning increment change
+//
 
+void VFO::display_tuning_increment(uint32_t value)
+{
+    event_data ed;
+
+    ed.u32_val = value;
+
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_SET_TUNING_INCREMENT, ed);
+}
 
 //
 // Set VFO frequency
@@ -330,6 +341,8 @@ bool VFO::set_freq (uint32_t freq)
 
 void VFO::subscriber(event_data ed, uint32_t event_subtype )
 {
+    uint16_t vfo_incr;
+    
     switch(event_subtype){
         case EV_SUBTYPE_TUNE_CW:
             set_freq(get_freq() + tuning_knob_increment);
@@ -367,6 +380,7 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             break;
         case EV_SUBTYPE_SET_INCR:
             tuning_knob_increment = ed.u32_val;
+            display_tuning_increment(tuning_knob_increment);
             break;
         case EV_SUBTYPE_TICK_MS:
             break;
@@ -560,6 +574,7 @@ bool VFO::begin(uint32_t init_freq)
 
     
     tuning_knob_increment = 1000UL;
+    display_tuning_increment(tuning_knob_increment);
     is_txing = false;
     test_mode = true;
     update_display_tx(is_txing);

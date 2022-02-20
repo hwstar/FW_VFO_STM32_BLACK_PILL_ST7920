@@ -81,8 +81,8 @@ class VFO
     void sideband_set(uint8_t mode);
     void set_tx_gain(uint16_t gain);
     void store_tx_gain();
-  
-
+    void display_tuning_increment(uint32_t value);
+    
 };
 
 #define __VFO_HPP__
