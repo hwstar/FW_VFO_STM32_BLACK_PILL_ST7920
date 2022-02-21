@@ -7,8 +7,7 @@
 #include <vfo.hpp>
 #include <24cw640.hpp>
 #include <mcp4725.hpp>
-
-#include <si5351.h>
+#include <si5351_ek_wrapper.hpp>
 
 #define TRX_PTT 0x80
 #define TRX_SPKR_MUTE 0x08 
@@ -50,30 +49,6 @@ static const trx_eeprom_txgain_info trx_eeprom_txgain_init = {
 };
 
 
-
-//
-// Extend Etherkit Si5351 class to include setting frequency in Hz.
-//
-
-class Ext_Si5351 : public Si5351
-{
-  public:
-    Ext_Si5351(uint8_t i2c_addr = SI5351_BUS_BASE_ADDR) : Si5351 {i2c_addr}
-    {
-    }
-    
-    /*
-    * Set frequency in Hz
-    */
-  
-    uint8_t set_freq_hz(uint32_t freq_hz, enum si5351_clock output)
-    {
-      uint64_t freq = 100ULL * freq_hz;
-      return set_freq(freq, output);
-    }
-};
-
-
 typedef struct band_info {
     BANDS band;
     uint32_t lower_edge;
@@ -85,7 +60,7 @@ const si5351_clock clock_outputs[3] = { SI5351_CLK0, SI5351_CLK1, SI5351_CLK2 };
 const si5351_drive drive_strengths[4] = { SI5351_DRIVE_2MA, SI5351_DRIVE_4MA, SI5351_DRIVE_6MA, SI5351_DRIVE_8MA };
 uint8_t page_buffer[EEPROM_24CW640_PAGE_SIZE];
 band_info band_table[8];
-Ext_Si5351 si5351;
+SI5351_EK_WRAPPER si5351a;
 PCA9554 lpf(LPF_I2C_ADDR);
 PCA9554 bpf(BPF_I2C_ADDR);
 PCA9554 trx(TRX_I2C_ADDR);
@@ -133,9 +108,9 @@ void VFO::update_clock_gen()
     //
     // Set the LO frequencies
     //
-    si5351.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
-    si5351.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
-    si5351.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
+    si5351a.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
+    si5351a.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
+    si5351a.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
 }
 
 
@@ -406,10 +381,9 @@ bool VFO::begin(uint32_t init_freq)
     uint8_t i;
     bool eeprom_invalid = false;
 
-    // SI5351 library calls Wire.begin, so it has to be the first thing initialized
+    // Initialize si5351a
 
-
-    if(!si5351.init(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
     }
 
@@ -497,14 +471,14 @@ bool VFO::begin(uint32_t init_freq)
     
     for(i = 0; i < 3; i++) {
         // Default freq 10 MHz
-        si5351.set_freq_hz(10000000, clock_outputs[i]);
+        si5351a.set_freq_hz(10000000, clock_outputs[i]);
         // 4mA Drive strength
-        si5351.drive_strength(clock_outputs[i], drive_strengths[1]);
+        si5351a.drive_strength(clock_outputs[i], drive_strengths[1]);
        
 
         // Note: setting up the previous commands turns the outputs on for some reason. Output disable must be the last thing we do.
         // All outputs off
-        si5351.output_enable(clock_outputs[i], 0);
+        si5351a.output_enable(clock_outputs[i], 0);
     }
 
   
@@ -581,9 +555,9 @@ bool VFO::begin(uint32_t init_freq)
     set_freq(init_freq);
     agc_set(1);
     sideband_set(MODE_DEFAULT);
-    si5351.output_enable(clock_outputs[FIRST_LO_ID], 1);
-    si5351.output_enable(clock_outputs[SECOND_LO_ID], 1);
-    si5351.output_enable(clock_outputs[THIRD_LO_ID], 1);
+    si5351a.output_enable(clock_outputs[FIRST_LO_ID], 1);
+    si5351a.output_enable(clock_outputs[SECOND_LO_ID], 1);
+    si5351a.output_enable(clock_outputs[THIRD_LO_ID], 1);
 
     digitalWrite(PIN_STM32_LED, 0); // LED on
 

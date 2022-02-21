@@ -92,6 +92,7 @@ void setup()
 
   Wire.setSCL(PIN_I2C_SCL); 
   Wire.setSDA(PIN_I2C_SDA); 
+  Wire.begin();
 
   SPI.setSCLK(PIN_SPI_CLK);
   SPI.setMOSI(PIN_SPI_MOSI);

@@ -63,28 +63,26 @@
 #define CONFIG_COMMAND_TIMEOUT 70 // 7 second command time out
 #define CONFIG_TX_FAN_THRESH_SEC 30 // TX fan will turn on after this key down exceeds this time in seconds.
 
-// Emission modes
 
-#define MODE_LSB 0
-#define MODE_USB 1
-#define MODE_DEFAULT 100
+// Define if dual 5351 board with 4 outputs is used
 
-// Radio modes
-#define RADIO_RX 0
-#define RADIO_TX 1
-#define RADIO_TUNE 2
+//#define CFG_DUAL_5351S 
 
 // Clock Source Calibration value
 // From Etherkit Clock source calibration Records
 #define CLK_SOURCE_CAL_VALUE -4560 
 
+//
+// Frequency of the reference oscillator
+//
+
+#define REF_TCXO_FREQ_HZ 25000000 // 25 MHz for etherkit breakout boards, 26 MHz for dual SI5351 VFO board
 
 /*
 * TRX eeprom constants to be stored in the on-board EEPROM
 */
 
 //#define INITIALIZE_TRX_EEPROM // Define to force initialization of the TRX EEPROM using the constants below
-
 
 #define FIRST_IF_UPPER_M6DB 45106416 // First IF upper -6db point MCF passband
 #define FIRST_IF_LOWER_M6DB 45093583  // First IF lower -6db point MCF passband
@@ -184,6 +182,21 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define BAND_EDGE_HIGH_8    30000000UL
 #define BAND_DEF_USB_8      true
 
+
+     
+//
+// I2C Device addresses
+// 7 bit I2C addresses
+//
+#define MUX_I2C_ADDRESS 0x70        // I2C mux on dual SI5351 board
+#define TRX_I2C_ADDR 0x38           // Transceiver control
+#define TRX_EEPROM_I2C_ADDR 0x50    // Transceiver EEPROM
+// 0x60 reserved for the Si5351s
+#define TRX_DAC_I2C_ADDR 0x62       // Transceiver MCP4725 TXGAIN DAC
+#define BPF_I2C_ADDR 0x39           // Band pass filter control
+#define LPF_I2C_ADDR 0x3A           // Low pass filter control
+
+
 // Local oscillator outputs on clock generator
 // ID numbers depend on the type of clock generator used.
 
@@ -191,18 +204,17 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define SECOND_LO_ID 1              // Is the BFO in RX, and the second if to first IF conversion oscillator in TX
 #define THIRD_LO_ID 2               // Is the VFO "Transverter" injection oscillator from the first IF to the desired band
 
-     
-//
-// I2C Device addresses
-// 7 bit I2C addresses
-//
-#define TRX_I2C_ADDR 0x38           // Transceiver control
-#define TRX_EEPROM_I2C_ADDR 0x50    // Transceiver EEPROM
-// 0x60 and 0x61 are reserved for the Si5351
-#define TRX_DAC_I2C_ADDR 0x62       // Transceiver MCP4725 TXGAIN DAC
-#define BPF_I2C_ADDR 0x39           // Band pass filter control
-#define LPF_I2C_ADDR 0x3A           // Low pass filter control
 
+// Emission modes
+
+#define MODE_LSB 0
+#define MODE_USB 1
+#define MODE_DEFAULT 100
+
+// Radio modes
+#define RADIO_RX 0
+#define RADIO_TX 1
+#define RADIO_TUNE 2
 
 #define __CONFIG_HPP__
 
