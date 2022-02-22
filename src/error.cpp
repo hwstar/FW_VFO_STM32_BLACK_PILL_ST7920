@@ -24,6 +24,8 @@ static const error_table_entry error_table[] = {
     {6, ERROR_LEVEL_HARD, "TRX EEPROM read error", "TRX H/W problem"},
     {7, ERROR_LEVEL_HARD, "TRX EEPROM write error", "TRX H/W problem"},
     {8, ERROR_LEVEL_HARD, "TRX DAC not present", "TRX H/W problem"},
+    {9, ERROR_LEVEL_HARD, "No 2nd SI5351 detected", "VFO H/W problem"},
+    {0x0A, ERROR_LEVEL_HARD, "No I2C bus sw. detected", "VFO H/W problem"},
     {0, ERROR_LEVEL_HARD, "Unhandled Error", "F/W bug"} // End sentinal
 };
 

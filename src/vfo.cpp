@@ -8,11 +8,23 @@
 #include <24cw640.hpp>
 #include <mcp4725.hpp>
 #include <si5351_ek_wrapper.hpp>
+#ifdef QUAD_OUTPUT_VFO_BOARD
+#include <pca9546.hpp>
+#endif
 
+// Output port bits on the TRX board
 #define TRX_PTT 0x80
 #define TRX_SPKR_MUTE 0x08 
 #define TRX_DISABLE_AGC 0x2
 #define TRX_ENA_TUNE_OSC 0x1
+
+// I2C bus select macros
+#ifdef QUAD_OUTPUT_VFO_BOARD
+#define SEL_I2C_BUS_EXT pca9546.bus_select(0x01)
+#define SEL_I2C_BUS_5351A pca9546.bus_select(0x02)
+#define SEL_I2C_BUS_5351B pca9546.bus_select(0x04)
+#define SEL_I2C_BUS_VFO_EEPROM pca9546.bus_select(0x08)
+#endif
 
 
 // TRX EEPROM initialization values for IF information
@@ -21,6 +33,8 @@ static const trx_eeprom_master_info trx_eeprom_master_init = {
         RECNAME_MASTER,
         SYSTEM_NAME      
 };
+
+// TRX EEPROM initialization values for the crystal filters
 
 static const trx_eeprom_if_info trx_eeprom_if_init = {
     RECNAME_TRXIF, // Record name
@@ -31,7 +45,7 @@ static const trx_eeprom_if_info trx_eeprom_if_init = {
     FIRST_TO_SECOND_IF_DELTA //  First IF to second IF delta
 };
 
-// TRX EEPROM initialization values for TX fain
+// TRX EEPROM initialization values for TX gain
 
 static const trx_eeprom_txgain_info trx_eeprom_txgain_init = {
     RECNAME_TXGAIN, // Record name
@@ -48,6 +62,7 @@ static const trx_eeprom_txgain_info trx_eeprom_txgain_init = {
 
 };
 
+// Band information data structure
 
 typedef struct band_info {
     BANDS band;
@@ -56,11 +71,17 @@ typedef struct band_info {
     bool usb_def;
 } band_info;
 
+// Class instantiations
+
 const si5351_clock clock_outputs[3] = { SI5351_CLK0, SI5351_CLK1, SI5351_CLK2 };
 const si5351_drive drive_strengths[4] = { SI5351_DRIVE_2MA, SI5351_DRIVE_4MA, SI5351_DRIVE_6MA, SI5351_DRIVE_8MA };
 uint8_t page_buffer[EEPROM_24CW640_PAGE_SIZE];
 band_info band_table[8];
 SI5351_EK_WRAPPER si5351a;
+#ifdef QUAD_OUTPUT_VFO_BOARD
+SI5351_EK_WRAPPER si5351b;
+PCA9546 pca9546(MUX_I2C_ADDRESS);
+#endif
 PCA9554 lpf(LPF_I2C_ADDR);
 PCA9554 bpf(BPF_I2C_ADDR);
 PCA9554 trx(TRX_I2C_ADDR);
@@ -84,6 +105,7 @@ void VFO::update_clock_gen()
     uint32_t first_lo_freq;
     uint32_t second_lo_freq;
     uint32_t third_lo_freq;
+    static uint32_t prev_first_lo_freq, prev_second_lo_freq, prev_third_lo_freq;
     
     //
     // Calculate the injection frequencies
@@ -108,9 +130,30 @@ void VFO::update_clock_gen()
     //
     // Set the LO frequencies
     //
-    si5351a.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
-    si5351a.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
-    si5351a.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
+    #ifndef QUAD_OUTPUT_VFO_BOARD
+    // Only update LO's if something changed to reduce I2C bus traffic
+    if(first_lo_freq != prev_first_lo_freq)
+        si5351a.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
+    if(second_lo_freq != prev_second_lo_freq)
+        si5351a.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
+    if(third_lo_freq != prev_third_lo_freq)
+        si5351a.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
+    #else
+    // Only update LO's if something changed to reduce I2C bus traffic
+    SEL_I2C_BUS_5351A;
+    if(first_lo_freq != prev_first_lo_freq)
+        si5351a.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
+    if(second_lo_freq != prev_second_lo_freq)
+        si5351a.set_freq_hz(second_lo_freq, clock_outputs[THIRD_LO_ID]);
+    SEL_I2C_BUS_5351B;
+    if(third_lo_freq != prev_third_lo_freq)
+        si5351b.set_freq_hz(third_lo_freq, clock_outputs[FIRST_LO_ID]);
+    SEL_I2C_BUS_EXT;
+    #endif
+    // Save values to check for differences next time
+    prev_first_lo_freq = first_lo_freq;
+    prev_second_lo_freq = second_lo_freq;
+    prev_third_lo_freq = third_lo_freq;
 }
 
 
@@ -382,10 +425,21 @@ bool VFO::begin(uint32_t init_freq)
     bool eeprom_invalid = false;
 
     // Initialize si5351a
-
+    #ifndef QUAD_OUTPUT_VFO_BOARD
     if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
     }
+    #else // Quad output VFO board
+    SEL_I2C_BUS_5351A;
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
+    }
+    SEL_I2C_BUS_5351B;
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_SECOND_CLKGEN);
+    }  
+    SEL_I2C_BUS_EXT;
+    #endif
 
     // Initialize the TRX motherboard defaults
     if(trx.present()){
@@ -466,20 +520,50 @@ bool VFO::begin(uint32_t init_freq)
     }   
     #endif
 
+    #ifndef QUAD_OUTPUT_VFO_BOARD
 
-
-    
     for(i = 0; i < 3; i++) {
+        // Single SI5351 - All 3 outputs at 4 mA
         // Default freq 10 MHz
         si5351a.set_freq_hz(10000000, clock_outputs[i]);
         // 4mA Drive strength
-        si5351a.drive_strength(clock_outputs[i], drive_strengths[1]);
+        si5351a.drive_strength(clock_outputs[i], SI5351_DRIVE_4MA);
        
 
         // Note: setting up the previous commands turns the outputs on for some reason. Output disable must be the last thing we do.
         // All outputs off
         si5351a.output_enable(clock_outputs[i], 0);
     }
+
+    #else
+        // Dual SI5351 - All outputs at 8 mA
+        
+        // First SI5351
+        // Output 0 is the first output (Mixer 1)
+        SEL_I2C_BUS_5351A;
+        si5351a.set_freq_hz(10000000, clock_outputs[0]);
+        si5351a.drive_strength(clock_outputs[0], SI5351_DRIVE_8MA);
+        si5351a.output_enable(clock_outputs[0], 0);
+
+        // Output 2 is the second output (Mixer 2)
+        si5351a.set_freq_hz(10000000, clock_outputs[2]);
+        si5351a.drive_strength(clock_outputs[2], SI5351_DRIVE_8MA);
+        si5351a.output_enable(clock_outputs[2], 0);
+
+        for(i =0; i < 3; i++)
+            si5351a.output_enable(clock_outputs[i], 0);
+
+        // Output 0 on si3551b is the third output. (Mixer 3)
+        SEL_I2C_BUS_5351B;
+        si5351b.set_freq_hz(10000000, clock_outputs[0]);
+        si5351b.drive_strength(clock_outputs[0], SI5351_DRIVE_8MA);
+
+        for(i =0; i < 3; i++)
+            si5351b.output_enable(clock_outputs[i], 0);
+
+        SEL_I2C_BUS_EXT;
+
+    #endif
 
   
 
@@ -555,9 +639,23 @@ bool VFO::begin(uint32_t init_freq)
     set_freq(init_freq);
     agc_set(1);
     sideband_set(MODE_DEFAULT);
+
+    #ifndef QUAD_OUTPUT_VFO_BOARD
+    // Enable all 3 outputs on the Etherkit Si5351 board
     si5351a.output_enable(clock_outputs[FIRST_LO_ID], 1);
     si5351a.output_enable(clock_outputs[SECOND_LO_ID], 1);
     si5351a.output_enable(clock_outputs[THIRD_LO_ID], 1);
+    #else
+    // For Quad output VFO board, enable outputs 0 and 2
+    // on the first SI5351, and output 0 on the second 
+    // SI5351
+    SEL_I2C_BUS_5351A;
+    si5351a.output_enable(clock_outputs[FIRST_LO_ID], 1);
+    si5351a.output_enable(clock_outputs[THIRD_LO_ID], 1);
+    SEL_I2C_BUS_5351B;
+    si5351b.output_enable(clock_outputs[FIRST_LO_ID], 1);
+    SEL_I2C_BUS_EXT;
+    #endif
 
     digitalWrite(PIN_STM32_LED, 0); // LED on
 

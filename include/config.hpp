@@ -63,10 +63,11 @@
 #define CONFIG_COMMAND_TIMEOUT 70 // 7 second command time out
 #define CONFIG_TX_FAN_THRESH_SEC 30 // TX fan will turn on after this key down exceeds this time in seconds.
 
-
+//
 // Define if dual 5351 board with 4 outputs is used
+//
 
-//#define CFG_DUAL_5351S 
+//#define QUAD_OUTPUT_VFO_BOARD 
 
 // Clock Source Calibration value
 // From Etherkit Clock source calibration Records
@@ -75,11 +76,15 @@
 //
 // Frequency of the reference oscillator
 //
+#ifndef QUAD_OUTPUT_VFO_BOARD
+#define REF_TCXO_FREQ_HZ 25000000 // 25 MHz for VFO with Etherkit breakout board
+#else
+#define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
+#endif
 
-#define REF_TCXO_FREQ_HZ 25000000 // 25 MHz for etherkit breakout boards, 26 MHz for dual SI5351 VFO board
 
 /*
-* TRX eeprom constants to be stored in the on-board EEPROM
+* TRX eeprom constants to be stored in the TRX board EEPROM
 */
 
 //#define INITIALIZE_TRX_EEPROM // Define to force initialization of the TRX EEPROM using the constants below
