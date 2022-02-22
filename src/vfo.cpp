@@ -39,8 +39,8 @@ static const trx_eeprom_master_info trx_eeprom_master_init = {
 static const trx_eeprom_if_info trx_eeprom_if_init = {
     RECNAME_TRXIF, // Record name
     SECOND_IF_CARRIER, // Second IF carrier
-    SECOND_IF_BW6DB, // Second IF bandwidth
-    FIRST_IF_BW6DB, // First IF 6dB bandwidth
+    SECOND_IF_BW6DB, // Second IF 6dB bandwidth
+    FIRST_IF_BW3DB, // First IF 3dB bandwidth
     FIRST_IF_FCENTER, // First IF center frequency
     FIRST_TO_SECOND_IF_DELTA //  First IF to second IF delta
 };

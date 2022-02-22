@@ -89,12 +89,12 @@
 
 //#define INITIALIZE_TRX_EEPROM // Define to force initialization of the TRX EEPROM using the constants below
 
-#define FIRST_IF_UPPER_M6DB 45106416 // First IF upper -6db point MCF passband
-#define FIRST_IF_LOWER_M6DB 45093583  // First IF lower -6db point MCF passband
+#define FIRST_IF_UPPER_M3DB 45106416 // First IF upper -3dB point MCF passband
+#define FIRST_IF_LOWER_M3DB 45093583  // First IF lower -3dB point MCF passband
 
 
-#define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6db point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12284950 // Second IF lower -6db point crystal filter passband
+#define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6dB point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12284950 // Second IF lower -6dB point crystal filter passband
 
 // Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
 // R1713 set to 475mV p-p at TP1701. These constants are used to flatten out the TX power across all bands
@@ -123,8 +123,8 @@
 #define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
 #define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
 
-#define FIRST_IF_BW6DB (FIRST_IF_UPPER_M6DB - FIRST_IF_LOWER_M6DB )
-#define FIRST_IF_FCENTER  ((FIRST_IF_BW6DB / 2) + FIRST_IF_LOWER_M6DB )
+#define FIRST_IF_BW3DB (FIRST_IF_UPPER_M3DB - FIRST_IF_LOWER_M3DB )
+#define FIRST_IF_FCENTER  ((FIRST_IF_BW3DB / 2) + FIRST_IF_LOWER_M3DB )
 
 #define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
 
