@@ -23,7 +23,7 @@ extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_
 
 //
 //
-// Define custome U8G2 class to use delay callback to fix ST7920 display artifacts
+// Define custom U8G2 class to use delay callback to fix ST7920 display artifacts
 //
 //
 

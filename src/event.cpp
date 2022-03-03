@@ -53,7 +53,7 @@ void EVENT::fire(uint32_t event_type, uint32_t event_subtype, char *value)
 }
 
 //
-// Fire an event with a char pointer value
+// Fire an event with a void pointer value
 //
 
 void EVENT::fire(uint32_t event_type, uint32_t event_subtype, void *value)

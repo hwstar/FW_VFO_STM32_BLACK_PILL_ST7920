@@ -28,13 +28,7 @@ class EEPROM_24CW640
     bool write_page(uint16_t page_num, void *buffer);
 
     private:
-    // Get the write protect register
-    bool get_wpr(uint8_t &value);
-
-    // Set the write protect register
-    bool set_wpr(uint8_t value);
-
-
+   
     int slave_addr;
     int result;
 

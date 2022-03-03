@@ -6,9 +6,13 @@
 
 bool EEPROM_24CW640::present()
 {
-    uint8_t value;
+    uint8_t addr[2] = {0x80, 0x00};
 
-    return get_wpr(value);
+    Wire.beginTransmission(slave_addr); // Send configuration register address
+    Wire.write(addr, 2);
+    if((result = Wire.endTransmission(false)) != 0) // Restart for read
+        return false;
+    return true;
 }
 
 int EEPROM_24CW640::get_result()
@@ -17,21 +21,6 @@ int EEPROM_24CW640::get_result()
 }
 
 
-bool EEPROM_24CW640::get_wpr(uint8_t &value)
-{
-    uint8_t addr[2] = {0x80, 0x00};
-
-    Wire.beginTransmission(slave_addr); // Send configuration register address
-    Wire.write(addr, 2);
-    if((result = Wire.endTransmission(false)) != 0) // Restart for read
-        return false;
-    Wire.requestFrom(slave_addr, 1);
-    while(!Wire.available());
-    value = Wire.read(); // Read the register value
-    return ((result = Wire.endTransmission()) == 0);
-}
-
-   
 bool EEPROM_24CW640::read_page(uint16_t page_num, void *buffer)
 { 
     char *b = (char *) buffer;  
