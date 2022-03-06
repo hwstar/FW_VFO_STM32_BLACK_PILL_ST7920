@@ -95,14 +95,11 @@
 
 //#define INITIALIZE_TRX_EEPROM // Define to force initialization of the TRX EEPROM using the constants below
 
-// For TRX S/N #1
-#define FIRST_IF_UPPER_M6DB 45106416 // First IF upper -3dB point MCF passband
-#define FIRST_IF_LOWER_M6DB 45093583  // First IF lower -3dB point MCF passband
+// Center frequency of first IF monolithic crystal filter
+#define FIRST_IF_FCENTER 45100000
+#define FIRST_IF_BW6DB 15000
 
-// For Quad VFO setup
-
-//#define FIRST_IF_UPPER_M6DB 45106416 // First IF upper -3dB point MCF passband
-//#define FIRST_IF_LOWER_M6DB 45093583  // First IF lower -3dB point MCF passband
+// Upper and lower 6 dB points for second IF crystal filtrt
 
 // For TRX S/N #1
 #define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6dB point crystal filter passband
@@ -139,9 +136,6 @@
 
 #define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
 #define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
-
-#define FIRST_IF_BW6DB (FIRST_IF_UPPER_M6DB - FIRST_IF_LOWER_M6DB )
-#define FIRST_IF_FCENTER  ((FIRST_IF_BW6DB / 2) + FIRST_IF_LOWER_M6DB )
 
 #define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
 
