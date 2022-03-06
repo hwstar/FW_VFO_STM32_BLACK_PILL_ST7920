@@ -20,7 +20,7 @@ static_assert(sizeof(trx_eeprom_master_info) == 32, "Size of trx_eeprom_master_i
 typedef struct trx_eeprom_if_info { 
     char recordname[8];
     uint32_t second_if_carrier;
-    uint32_t second_if_bw;
+    uint32_t second_if_bw_6_db;
     uint32_t first_if_bw_6_db;
     uint32_t first_if_fcenter;
     uint32_t first_to_second_if_delta; // 28 bytes total

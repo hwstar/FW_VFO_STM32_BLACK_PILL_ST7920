@@ -40,7 +40,7 @@ static const trx_eeprom_if_info trx_eeprom_if_init = {
     RECNAME_TRXIF, // Record name
     SECOND_IF_CARRIER, // Second IF carrier
     SECOND_IF_BW6DB, // Second IF 6dB bandwidth
-    FIRST_IF_BW3DB, // First IF 3dB bandwidth
+    FIRST_IF_BW6DB, // First IF 3dB bandwidth
     FIRST_IF_FCENTER, // First IF center frequency
     FIRST_TO_SECOND_IF_DELTA //  First IF to second IF delta
 };
@@ -334,7 +334,7 @@ bool VFO::set_freq (uint32_t freq)
 
     vfo_freq = freq;
 
-
+    #ifndef VFO_MODULE_TEST_MODE
     // Set the band filters if a new band
     if(last_band != band_table[i].band){
         band_select.set(band_table[i].band);
@@ -344,7 +344,8 @@ bool VFO::set_freq (uint32_t freq)
 
     // Set correct TX gain for selected band
     trx_dac.write_fast(trx_gain_info.tx_gain_values[i]);
-
+    #endif
+    
     update_clock_gen();
 
     // Fire display event to update frequency
@@ -423,24 +424,25 @@ bool VFO::begin(uint32_t init_freq)
 
     uint8_t i;
     bool eeprom_invalid = false;
-
+    
     // Initialize si5351a
     #ifndef QUAD_OUTPUT_VFO_BOARD
-    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ, CLK_SOURCE_CAL_VALUE)){
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
     }
     #else // Quad output VFO board
     SEL_I2C_BUS_5351A;
-    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ , CLK_SOURCE_CAL_VALUE)){
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
     }
     SEL_I2C_BUS_5351B;
-    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, 0, CLK_SOURCE_CAL_VALUE)){
+    if(!si5351b.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ , CLK_SOURCE_CAL_VALUE)){
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_SECOND_CLKGEN);
     }  
     SEL_I2C_BUS_EXT;
     #endif
 
+    #ifndef VFO_MODULE_TEST_MODE
     // Initialize the TRX motherboard defaults
     if(trx.present()){
         // Transceiver board present
@@ -475,6 +477,7 @@ bool VFO::begin(uint32_t init_freq)
         have_trx_dac = true;
     }
 
+    #endif
     //
     // Initialization of system constants
     //
@@ -628,7 +631,9 @@ bool VFO::begin(uint32_t init_freq)
     #endif
 
     // Initialize the band select 
+    #ifndef VFO_MODULE_TEST_MODE
     band_select.begin(&bpf, &lpf);
+    #endif
 
     
     tuning_knob_increment = 1000UL;
