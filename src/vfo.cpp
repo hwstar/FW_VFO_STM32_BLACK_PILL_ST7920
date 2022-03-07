@@ -18,6 +18,11 @@
 #define TRX_DISABLE_AGC 0x2
 #define TRX_ENA_TUNE_OSC 0x1
 
+// SI5351 Clock output definitions
+#define SI5351_LOGICAL_CLK2 2
+#define SI5351_LOGICAL_CLK1 1
+#define SI5351_LOGICAL_CLK0 0
+
 // I2C bus select macros
 #ifdef QUAD_OUTPUT_VFO_BOARD
 #define SEL_I2C_BUS_EXT pca9546.bus_select(0x01)
@@ -133,21 +138,21 @@ void VFO::update_clock_gen()
     #ifndef QUAD_OUTPUT_VFO_BOARD
     // Only update LO's if something changed to reduce I2C bus traffic
     if(first_lo_freq != prev_first_lo_freq)
-        si5351a.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
+        si5351a.set_freq_hz(first_lo_freq, clock_outputs[SI5351_LOGICAL_CLK0]); // Etherkit CLK0
     if(second_lo_freq != prev_second_lo_freq)
-        si5351a.set_freq_hz(second_lo_freq, clock_outputs[SECOND_LO_ID]);
+        si5351a.set_freq_hz(second_lo_freq, clock_outputs[SI5351_LOGICAL_CLK1]); // Etherkit CLK1
     if(third_lo_freq != prev_third_lo_freq)
-        si5351a.set_freq_hz(third_lo_freq, clock_outputs[THIRD_LO_ID]);
+        si5351a.set_freq_hz(third_lo_freq, clock_outputs[SI5351_LOGICAL_CLK2]); // Etherkit CLK2
     #else
     // Only update LO's if something changed to reduce I2C bus traffic
     SEL_I2C_BUS_5351A;
     if(first_lo_freq != prev_first_lo_freq)
-        si5351a.set_freq_hz(first_lo_freq, clock_outputs[FIRST_LO_ID]);
+        si5351a.set_freq_hz(first_lo_freq, clock_outputs[SI5351_LOGICAL_CLK2]); // J301 (SI5351A CLK2)
     if(second_lo_freq != prev_second_lo_freq)
-        si5351a.set_freq_hz(second_lo_freq, clock_outputs[THIRD_LO_ID]);
+        si5351a.set_freq_hz(second_lo_freq, clock_outputs[SI5351_LOGICAL_CLK0]); // J302 (SI5351A CLK0)
     SEL_I2C_BUS_5351B;
     if(third_lo_freq != prev_third_lo_freq)
-        si5351b.set_freq_hz(third_lo_freq, clock_outputs[FIRST_LO_ID]);
+        si5351b.set_freq_hz(third_lo_freq, clock_outputs[SI5351_LOGICAL_CLK2]); // J303 (SI5351B CLK2)
     SEL_I2C_BUS_EXT;
     #endif
     // Save values to check for differences next time
@@ -544,26 +549,27 @@ bool VFO::begin(uint32_t init_freq)
         // First SI5351
         // Output 0 is the first output (Mixer 1)
         SEL_I2C_BUS_5351A;
-        si5351a.set_freq_hz(10000000, clock_outputs[0]);
-        si5351a.drive_strength(clock_outputs[0], SI5351_DRIVE_8MA);
-        si5351a.output_enable(clock_outputs[0], 0);
-
+        si5351a.set_freq_hz(10000000, clock_outputs[SI5351_LOGICAL_CLK2]);
+        si5351a.drive_strength(clock_outputs[SI5351_LOGICAL_CLK2], SI5351_DRIVE_8MA);
+       
         // Output 2 is the second output (Mixer 2)
-        si5351a.set_freq_hz(10000000, clock_outputs[2]);
-        si5351a.drive_strength(clock_outputs[2], SI5351_DRIVE_8MA);
-        si5351a.output_enable(clock_outputs[2], 0);
-
+        si5351a.set_freq_hz(10000000, clock_outputs[SI5351_CLK0]);
+        si5351a.drive_strength(clock_outputs[SI5351_LOGICAL_CLK0], SI5351_DRIVE_8MA);
+     
+        // All outputs off
         for(i =0; i < 3; i++)
             si5351a.output_enable(clock_outputs[i], 0);
-
-        // Output 0 on si3551b is the third output. (Mixer 3)
+        
+        // Second SI5351
+        // Output 2 on si3551b is the third output. (Mixer 3)
         SEL_I2C_BUS_5351B;
-        si5351b.set_freq_hz(10000000, clock_outputs[0]);
-        si5351b.drive_strength(clock_outputs[0], SI5351_DRIVE_8MA);
+        si5351b.set_freq_hz(10000000, clock_outputs[SI5351_LOGICAL_CLK2]);
+        si5351b.drive_strength(clock_outputs[SI5351_LOGICAL_CLK2], SI5351_DRIVE_8MA);
 
+        // All outputs off
         for(i =0; i < 3; i++)
             si5351b.output_enable(clock_outputs[i], 0);
-
+        // Reset I2C bus multplexer to the external I2C bus
         SEL_I2C_BUS_EXT;
 
     #endif
@@ -647,18 +653,18 @@ bool VFO::begin(uint32_t init_freq)
 
     #ifndef QUAD_OUTPUT_VFO_BOARD
     // Enable all 3 outputs on the Etherkit Si5351 board
-    si5351a.output_enable(clock_outputs[FIRST_LO_ID], 1);
-    si5351a.output_enable(clock_outputs[SECOND_LO_ID], 1);
-    si5351a.output_enable(clock_outputs[THIRD_LO_ID], 1);
+    si5351a.output_enable(clock_outputs[0], 1);
+    si5351a.output_enable(clock_outputs[1], 1);
+    si5351a.output_enable(clock_outputs[2], 1);
     #else
     // For Quad output VFO board, enable outputs 0 and 2
     // on the first SI5351, and output 0 on the second 
     // SI5351
     SEL_I2C_BUS_5351A;
-    si5351a.output_enable(clock_outputs[FIRST_LO_ID], 1);
-    si5351a.output_enable(clock_outputs[THIRD_LO_ID], 1);
+    si5351a.output_enable(clock_outputs[0], 1);
+    si5351a.output_enable(clock_outputs[2], 1);
     SEL_I2C_BUS_5351B;
-    si5351b.output_enable(clock_outputs[FIRST_LO_ID], 1);
+    si5351b.output_enable(clock_outputs[2], 1);
     SEL_I2C_BUS_EXT;
     #endif
 

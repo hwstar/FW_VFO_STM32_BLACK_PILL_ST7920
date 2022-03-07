@@ -213,14 +213,6 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define LPF_I2C_ADDR 0x3A           // Low pass filter control
 
 
-// Local oscillator outputs on clock generator
-// ID numbers depend on the type of clock generator used.
-
-#define FIRST_LO_ID 0               // Is the first IF to second if conversion oscillator in RX and the Carrier oscillator in TX
-#define SECOND_LO_ID 1              // Is the BFO in RX, and the second if to first IF conversion oscillator in TX
-#define THIRD_LO_ID 2               // Is the VFO "Transverter" injection oscillator from the first IF to the desired band
-
-
 // Emission modes
 
 #define MODE_LSB 0

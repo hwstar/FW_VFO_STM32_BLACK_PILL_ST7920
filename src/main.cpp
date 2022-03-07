@@ -172,10 +172,10 @@ void encoder_knob_subscriber(event_data ed, uint32_t event_subtype)
       // Select VFO increment locally instead of putting this code in the VFO class.
       curr_incr = vfo.incr_get();
       if(curr_incr == 1000)
+        new_incr = 500;
+      else if(curr_incr == 500)
         new_incr = 100;
       else if(curr_incr == 100)
-        new_incr = 10;
-      else if(curr_incr == 10)
         new_incr = 1000;
       else
         new_incr = 1000;
