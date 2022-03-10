@@ -36,8 +36,22 @@
 
 static const trx_eeprom_master_info trx_eeprom_master_init = {
         RECNAME_MASTER,
-        SYSTEM_NAME      
+        TRX_BOARD_NAME      
 };
+
+static const vfo_eeprom_cal_info vfo_eeprom_calibration_init = {
+    RECNAME_VFOCAL,
+    CLK_SOURCE_CAL_VALUE,
+};
+
+
+#ifdef QUAD_OUTPUT_VFO_BOARDS
+// VFO EEPROM initialization values for VFO calibration, and transceiver settings
+static const vfo_eeprom_master_info vfo_eeprom_master_init = {
+        RECNAME_MASTER,
+        VFO_BOARD_NAME      
+};
+#endif
 
 // TRX EEPROM initialization values for the crystal filters
 
@@ -45,7 +59,7 @@ static const trx_eeprom_if_info trx_eeprom_if_init = {
     RECNAME_TRXIF, // Record name
     SECOND_IF_CARRIER, // Second IF carrier
     SECOND_IF_BW6DB, // Second IF 6dB bandwidth
-    FIRST_IF_BW6DB, // First IF 3dB bandwidth
+    FIRST_IF_BW6DB, // First IF 6dB bandwidth
     FIRST_IF_FCENTER, // First IF center frequency
     FIRST_TO_SECOND_IF_DELTA //  First IF to second IF delta
 };
@@ -91,7 +105,7 @@ PCA9554 lpf(LPF_I2C_ADDR);
 PCA9554 bpf(BPF_I2C_ADDR);
 PCA9554 trx(TRX_I2C_ADDR);
 BANDSEL band_select;
-EEPROM_24CW640 trx_eeprom(TRX_EEPROM_I2C_ADDR);
+EEPROM_24CW640 eeprom(EEPROM_I2C_ADDR);
 DAC_MCP4725 trx_dac(TRX_DAC_I2C_ADDR);
 
 
@@ -459,13 +473,32 @@ bool VFO::begin(uint32_t init_freq)
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_TRX); // TRX board not present
     }
 
+    #ifdef QUAD_OUTPUT_VFO_BOARD
+    // Check for presence of VFO EEPROM U602
+    have_vfo_eeprom = false;
+    SEL_I2C_BUS_VFO_EEPROM;
+    if(eeprom.present()){
+        if(!eeprom.read_page(RECNUM_EEPROM_MASTER, page_buffer)){
+            SEL_I2C_BUS_EXT;
+            pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_VFO_EEPROM_READ);
+        }
+        else {
+            SEL_I2C_BUS_EXT;
+            have_vfo_eeprom = true;
+        }
+    }
+    else{
+        SEL_I2C_BUS_EXT;
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_VFO_EEPROM_PRESENT);    
+    }
+    #endif
 
 
-    // Test for the presence of the EEPROM
+    // Test for the presence of the trx EEPROM
     have_trx_eeprom = false;
-    if(trx_eeprom.present()) {
+    if(eeprom.present()) {
         // Read the header at page 0
-        if(!trx_eeprom.read_page(RECNUM_EEPROM_MASTER, page_buffer))
+        if(!eeprom.read_page(RECNUM_EEPROM_MASTER, page_buffer))
             pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_EEPROM_READ);
         have_trx_eeprom = true;
     }
@@ -487,28 +520,32 @@ bool VFO::begin(uint32_t init_freq)
     // Initialization of system constants
     //
 
-    
+    #ifdef INITIALIZE_VFO_EEPROM
+    vfo_master_info = vfo_eeprom_master_init;
+
+
+    #endif
 
     // If initialization is forced from config.hpp
     #ifdef INITIALIZE_TRX_EEPROM
     trx_master_info = trx_eeprom_master_init;
     trx_gain_info = trx_eeprom_txgain_init;
     trx_if_info = trx_eeprom_if_init;
-    trx_eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
-    trx_eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
-    trx_eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
+    eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
+    eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+    eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
     #else
     // Normal initialization
     if(have_trx_eeprom){
-        trx_eeprom.read_page(RECNUM_EEPROM_MASTER, &trx_master_info);
+        eeprom.read_page(RECNUM_EEPROM_MASTER, &trx_master_info);
         if(strncmp(trx_master_info.recordname, RECNAME_MASTER, sizeof(RECNAME_MASTER)))
             eeprom_invalid = true;
 
-        trx_eeprom.read_page(RECNUM_EEPROM_IF, &trx_if_info);
+        eeprom.read_page(RECNUM_EEPROM_IF, &trx_if_info);
         if(strncmp(trx_if_info.recordname, RECNAME_TRXIF, sizeof(RECNAME_TRXIF)))
             eeprom_invalid = true;
         
-        trx_eeprom.read_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+        eeprom.read_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
         if(strncmp(trx_gain_info.recordname, RECNAME_TXGAIN, sizeof(RECNAME_TXGAIN)))
             eeprom_invalid = true; 
     }
@@ -520,15 +557,16 @@ bool VFO::begin(uint32_t init_freq)
         trx_if_info = trx_eeprom_if_init;
         // If we have the trx EEPROM, initialize it here
         if(have_trx_eeprom){
-            trx_eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
-            trx_eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
-            trx_eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
+            eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
+            eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+            eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
         }
 
     }   
     #endif
 
     #ifndef QUAD_OUTPUT_VFO_BOARD
+
 
     for(i = 0; i < 3; i++) {
         // Single SI5351 - All 3 outputs at 4 mA

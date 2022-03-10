@@ -6,16 +6,26 @@
 
 #ifndef __VFO_HPP__
 
+//
+// EEPROM data structures
+//
+
 typedef struct trx_eeprom_master_info {
     char recordname[8];
     char boardname[16];
     uint8_t pad[8];
 } trx_eeprom_master_info;
-#define RECNAME_MASTER "MASTER"
-#define RECNUM_EEPROM_MASTER 0
-
 static_assert(sizeof(trx_eeprom_master_info) == 32, "Size of trx_eeprom_master_info not equal to eeprom page size");
 
+typedef struct vfo_eeprom_master_info {
+    char recordname[8];
+    char boardname[16];
+    uint8_t pad[8];
+} vfo_eeprom_master_info;
+static_assert(sizeof(vfo_eeprom_master_info) == 32, "Size of vfo_eeprom_master_info not equal to eeprom page size");
+
+#define RECNAME_MASTER "MASTER"
+#define RECNUM_EEPROM_MASTER 0
 
 typedef struct trx_eeprom_if_info { 
     char recordname[8];
@@ -42,6 +52,22 @@ typedef struct trx_eeprom_txgain_info {
 static_assert(sizeof(trx_eeprom_txgain_info) == 32, "Size of trx_eeprom_txgain_info not equal to eeprom page size");
 
 
+typedef struct vfo_eeprom_cal_info {
+    char recordname[8];
+    int16_t cal_value;
+    uint8_t pad[22];
+} vfo_eeprom_cal_info;
+#define RECNAME_VFOCAL "VFOCAL"
+#define RECNUM_EEPROM_VFO_CAL 16
+
+static_assert(sizeof(vfo_eeprom_cal_info) == 32, "Size of vfo_eeprom_cal_info not equal to eeprom page size");
+
+
+
+//
+// VFO class
+//
+
 class VFO
 {
     public:
@@ -58,6 +84,9 @@ class VFO
     bool is_usb;
     bool is_txing;
     bool test_mode;
+    bool have_trx_eeprom;
+    bool have_trx_dac;
+    bool have_vfo_eeprom;
     BANDS last_band;
     uint32_t vfo_freq;
     uint32_t high_injection_freq;
@@ -67,11 +96,10 @@ class VFO
     uint8_t trx_save;
     uint8_t last_ptt_mode;
     uint8_t band_index;
-    uint8_t have_trx_eeprom;
-    uint8_t have_trx_dac;
     trx_eeprom_master_info trx_master_info;
     trx_eeprom_if_info trx_if_info;
     trx_eeprom_txgain_info trx_gain_info;
+    vfo_eeprom_cal_info vfo_cal_info;
 
     void update_clock_gen();
     void update_display_tx(uint8_t val);

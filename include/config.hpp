@@ -59,35 +59,16 @@
 // 
 
 #define SYSTEM_NAME  "LEFTY TRX"
+#define TRX_BOARD_NAME "TRXC2" // Transceiver board name
 
 #define CONFIG_COMMAND_TIMEOUT 70 // 7 second command time out
 #define CONFIG_TX_FAN_THRESH_SEC 30 // TX fan will turn on after this key down exceeds this time in seconds.
 
-//
-// VFO Module test mode skips checking for other boards in the system
-//
+/*
+/ VFO Module test mode skips checking for other boards in the system
+/*
 
 //#define VFO_MODULE_TEST_MODE
-
-//
-// Define if dual 5351 board with 4 outputs is used
-//
-
-//#define QUAD_OUTPUT_VFO_BOARD 
-
-// Clock Source Calibration value
-// From Etherkit Clock source calibration Records
-#define CLK_SOURCE_CAL_VALUE -4560  // Etherkit SI3531 in prototype S/N #1
-//#define CLK_SOURCE_CAL_VALUE -395 // Quad output VFO S/N #1
-//
-// Frequency of the reference oscillator
-//
-#ifndef QUAD_OUTPUT_VFO_BOARD
-#define REF_TCXO_FREQ_HZ 25000000 // 25 MHz for VFO with Etherkit breakout board
-#else
-#define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
-#endif
-
 
 /*
 * TRX eeprom constants to be stored in the TRX board EEPROM
@@ -95,19 +76,40 @@
 
 //#define INITIALIZE_TRX_EEPROM // Define to force initialization of the TRX EEPROM using the constants below
 
-// Center frequency of first IF monolithic crystal filter
+/*
+* Define if dual 5351 board with 4 outputs is used
+*/
+
+//#define QUAD_OUTPUT_VFO_BOARD 
+
+//
+// Center frequency of first IF monolithic crystal filter (does not change from board to board)
+//
 #define FIRST_IF_FCENTER 45100000
+
+//
+// Bandwidth of the first if monolithic crystal filter (does not change from board to board)
+//
+
 #define FIRST_IF_BW6DB 15000
 
-// Upper and lower 6 dB points for second IF crystal filtrt
+/*
+* Contants specific to the different versions of VFO boards used
+*/
 
-// For TRX S/N #1
+#ifndef QUAD_OUTPUT_VFO_BOARD
+#define REF_TCXO_FREQ_HZ 25000000 // 25 MHz for VFO with Etherkit breakout board
+#define CLK_SOURCE_CAL_VALUE -4560 // VFO calibration value for the Etherkit SI3531 in prototype S/N #1
+#define SECOND_IF_UPPER_M6DB 12287533 // Second IF upper -6dB point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12284967 // Second IF lower -6dB point crystal filter passband
+
+#else
+#define VFO_BOARD_NAME "VFOC2" // Board name for concept 2 VFO with on-board eeprom
+#define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
+#define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
 #define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6dB point crystal filter passband
 #define SECOND_IF_LOWER_M6DB 12284950 // Second IF lower -6dB point crystal filter passband
-
-// For Quad VFO Setup
-//#define SECOND_IF_UPPER_M6DB 12287533 // Second IF upper -6dB point crystal filter passband
-//#define SECOND_IF_LOWER_M6DB 12284967 // Second IF lower -6dB point crystal filter passband
+#endif
 
 
 // Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
@@ -121,23 +123,31 @@
 
 // TRX DAC U401 is referenced to 5.0V and has 4096 steps. The voltage per step is therefore 1.22mV.
 
-#define TRX_TXGAIN_160M 1351
-#define TRX_TXGAIN_80M 1335
-#define TRX_TXGAIN_40M 1351
-#define TRX_TXGAIN_20M 1425
-#define TRX_TXGAIN_17M 1485
-#define TRX_TXGAIN_15M 1485
-#define TRX_TXGAIN_12M 1500
-#define TRX_TXGAIN_10M 1675
 
+#ifndef QUAD_OUTPUT_VFO_BOARD
 
+#define TRX_TXGAIN_160M 1500
+#define TRX_TXGAIN_80M 1450
+#define TRX_TXGAIN_40M 1600
+#define TRX_TXGAIN_20M 1650
+#define TRX_TXGAIN_17M 1700
+#define TRX_TXGAIN_15M 1650
+#define TRX_TXGAIN_12M 1725
+#define TRX_TXGAIN_10M 1950
 
-// Calculated from the first IF and second IF constants above
+#else // Etherkit SI5351
 
-#define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
-#define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
+#define TRX_TXGAIN_160M 1500
+#define TRX_TXGAIN_80M 1450
+#define TRX_TXGAIN_40M 1600
+#define TRX_TXGAIN_20M 1650
+#define TRX_TXGAIN_17M 1700
+#define TRX_TXGAIN_15M 1650
+#define TRX_TXGAIN_12M 1725
+#define TRX_TXGAIN_10M 1950
 
-#define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
+#endif
+
 
 
 /*
@@ -206,7 +216,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 //
 #define MUX_I2C_ADDRESS 0x70        // I2C mux on dual SI5351 board
 #define TRX_I2C_ADDR 0x38           // Transceiver control
-#define TRX_EEPROM_I2C_ADDR 0x50    // Transceiver EEPROM
+#define EEPROM_I2C_ADDR 0x50        // VFO and TRX eeproms
 // 0x60 reserved for the Si5351s
 #define TRX_DAC_I2C_ADDR 0x62       // Transceiver MCP4725 TXGAIN DAC
 #define BPF_I2C_ADDR 0x39           // Band pass filter control
@@ -223,6 +233,17 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define RADIO_RX 0
 #define RADIO_TX 1
 #define RADIO_TUNE 2
+
+
+
+
+// Calculated from the first IF and second IF constants above
+
+#define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
+#define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
+
+#define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
+
 
 #define __CONFIG_HPP__
 
