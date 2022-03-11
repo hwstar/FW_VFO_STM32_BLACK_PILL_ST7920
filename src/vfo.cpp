@@ -39,13 +39,14 @@ static const trx_eeprom_master_info trx_eeprom_master_init = {
         TRX_BOARD_NAME      
 };
 
+
 static const vfo_eeprom_cal_info vfo_eeprom_calibration_init = {
     RECNAME_VFOCAL,
     CLK_SOURCE_CAL_VALUE,
 };
 
 
-#ifdef QUAD_OUTPUT_VFO_BOARDS
+#ifdef QUAD_OUTPUT_VFO_BOARD
 // VFO EEPROM initialization values for VFO calibration, and transceiver settings
 static const vfo_eeprom_master_info vfo_eeprom_master_init = {
         RECNAME_MASTER,
@@ -442,25 +443,15 @@ bool VFO::begin(uint32_t init_freq)
     digitalWrite(PIN_STM32_LED,1); // LED off
 
     uint8_t i;
-    bool eeprom_invalid = false;
+    bool trx_eeprom_invalid = false;
+    bool vfo_eeprom_invalid = false;
     
-    // Initialize si5351a
-    #ifndef QUAD_OUTPUT_VFO_BOARD
-    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ, CLK_SOURCE_CAL_VALUE)){
-        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
-    }
-    #else // Quad output VFO board
-    SEL_I2C_BUS_5351A;
-    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ , CLK_SOURCE_CAL_VALUE)){
-        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
-    }
-    SEL_I2C_BUS_5351B;
-    if(!si5351b.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ , CLK_SOURCE_CAL_VALUE)){
-        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_SECOND_CLKGEN);
-    }  
+    // If quad output VFO, select external I2C bus.
+    #ifdef QUAD_OUTPUT_VFO_BOARD
     SEL_I2C_BUS_EXT;
     #endif
 
+    // If not standalone VFO test mode
     #ifndef VFO_MODULE_TEST_MODE
     // Initialize the TRX motherboard defaults
     if(trx.present()){
@@ -519,12 +510,41 @@ bool VFO::begin(uint32_t init_freq)
     //
     // Initialization of system constants
     //
-
+    #ifdef QUAD_OUTPUT_VFO_BOARD
     #ifdef INITIALIZE_VFO_EEPROM
     vfo_master_info = vfo_eeprom_master_init;
+    vfo_cal_info = vfo_eeprom_calibration_init;
+    SEL_I2C_BUS_VFO_EEPROM;
+    eeprom.write_page(RECNUM_EEPROM_MASTER, &vfo_master_info);
+    eeprom.write_page(RECNUM_EEPROM_VFO_CAL, &vfo_cal_info);
+    SEL_I2C_BUS_EXT;
 
+    #else
 
+    //
+    // Check VFO eeprom contents
+    //
+    SEL_I2C_BUS_VFO_EEPROM;
+    if(have_vfo_eeprom){
+        if(!eeprom.verify_header(RECNUM_EEPROM_MASTER, RECNAME_MASTER, &vfo_master_info))
+            vfo_eeprom_invalid = true;
+        if(!eeprom.verify_header(RECNUM_EEPROM_VFO_CAL, RECNAME_VFOCAL, &vfo_cal_info))
+            vfo_eeprom_invalid = true;
+    }
+    
+    if(!have_vfo_eeprom || vfo_eeprom_invalid){
+        vfo_master_info = vfo_eeprom_master_init;
+        vfo_cal_info = vfo_eeprom_calibration_init;
+        // If we have the vfo EEPROM, initialize it here
+        if(have_trx_eeprom){
+            eeprom.write_page(RECNUM_EEPROM_MASTER, &vfo_master_info);
+            eeprom.write_page(RECNUM_EEPROM_VFO_CAL, &vfo_cal_info);
+        }
+    }
+    SEL_I2C_BUS_EXT;
     #endif
+    #endif
+
 
     // If initialization is forced from config.hpp
     #ifdef INITIALIZE_TRX_EEPROM
@@ -537,20 +557,17 @@ bool VFO::begin(uint32_t init_freq)
     #else
     // Normal initialization
     if(have_trx_eeprom){
-        eeprom.read_page(RECNUM_EEPROM_MASTER, &trx_master_info);
-        if(strncmp(trx_master_info.recordname, RECNAME_MASTER, sizeof(RECNAME_MASTER)))
-            eeprom_invalid = true;
+        if(!eeprom.verify_header(RECNUM_EEPROM_MASTER, RECNAME_MASTER, &trx_master_info))
+            trx_eeprom_invalid = true;
 
-        eeprom.read_page(RECNUM_EEPROM_IF, &trx_if_info);
-        if(strncmp(trx_if_info.recordname, RECNAME_TRXIF, sizeof(RECNAME_TRXIF)))
-            eeprom_invalid = true;
+        if(!eeprom.verify_header(RECNUM_EEPROM_IF, RECNAME_TRXIF, &trx_if_info))
+            trx_eeprom_invalid = true;
         
-        eeprom.read_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
-        if(strncmp(trx_gain_info.recordname, RECNAME_TXGAIN, sizeof(RECNAME_TXGAIN)))
-            eeprom_invalid = true; 
+        if(!eeprom.verify_header(RECNUM_EEPROM_TXGAIN, RECNAME_TXGAIN, &trx_gain_info))
+            trx_eeprom_invalid = true; 
     }
 
-    if(!have_trx_eeprom || eeprom_invalid){
+    if(!have_trx_eeprom || trx_eeprom_invalid){
         // Load constants from config.hpp 
         trx_master_info = trx_eeprom_master_init;
         trx_gain_info = trx_eeprom_txgain_init;
@@ -563,6 +580,23 @@ bool VFO::begin(uint32_t init_freq)
         }
 
     }   
+    #endif
+
+    // Initialize si5351a
+    #ifndef QUAD_OUTPUT_VFO_BOARD
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ, CLK_SOURCE_CAL_VALUE)){
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
+    }
+    #else // Quad output VFO board
+    SEL_I2C_BUS_5351A;
+    if(!si5351a.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ , vfo_cal_info.cal_value)){
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_CLKGEN);
+    }
+    SEL_I2C_BUS_5351B;
+    if(!si5351b.init_sans_wire_begin(SI5351_CRYSTAL_LOAD_8PF, REF_TCXO_FREQ_HZ , vfo_cal_info.cal_value)){
+        pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_SECOND_CLKGEN);
+    }  
+    SEL_I2C_BUS_EXT;
     #endif
 
     #ifndef QUAD_OUTPUT_VFO_BOARD
@@ -594,8 +628,8 @@ bool VFO::begin(uint32_t init_freq)
         si5351a.set_freq_hz(10000000, clock_outputs[SI5351_CLK0]);
         si5351a.drive_strength(clock_outputs[SI5351_LOGICAL_CLK0], SI5351_DRIVE_8MA);
      
-        // All outputs off
-        for(i =0; i < 3; i++)
+        // SI5351A All outputs off
+        for(i = 0; i < 3; i++)
             si5351a.output_enable(clock_outputs[i], 0);
         
         // Second SI5351
@@ -604,8 +638,8 @@ bool VFO::begin(uint32_t init_freq)
         si5351b.set_freq_hz(10000000, clock_outputs[SI5351_LOGICAL_CLK2]);
         si5351b.drive_strength(clock_outputs[SI5351_LOGICAL_CLK2], SI5351_DRIVE_8MA);
 
-        // All outputs off
-        for(i =0; i < 3; i++)
+        // SI5351B All outputs off
+        for(i = 0; i < 3; i++)
             si5351b.output_enable(clock_outputs[i], 0);
         // Reset I2C bus multplexer to the external I2C bus
         SEL_I2C_BUS_EXT;

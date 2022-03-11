@@ -76,3 +76,24 @@ bool EEPROM_24CW640::write_page(uint16_t page_num, void *buffer)
     return true;
 
 }
+
+/*
+* Read record number and verify its header
+*
+* returns the
+*/
+
+bool EEPROM_24CW640::verify_header(uint16_t page_num, const char *recname, void *buffer)
+{
+    int len = strlen(recname);
+   
+    if(len > 15) // Clip length
+        len = 15;
+
+    // Read in the page
+    if(!read_page(page_num, buffer))
+        return false;
+    if(strncmp((char *) buffer, recname, len))
+        return false;
+    return true;
+}

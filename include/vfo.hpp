@@ -88,17 +88,18 @@ class VFO
     bool have_trx_dac;
     bool have_vfo_eeprom;
     BANDS last_band;
+    uint8_t trx_save;
+    uint8_t last_ptt_mode;
+    uint8_t band_index;
     uint32_t vfo_freq;
     uint32_t high_injection_freq;
     uint32_t low_injection_freq;
     uint32_t tuning_knob_increment;
     int32_t tx_filter_offset;
-    uint8_t trx_save;
-    uint8_t last_ptt_mode;
-    uint8_t band_index;
     trx_eeprom_master_info trx_master_info;
     trx_eeprom_if_info trx_if_info;
     trx_eeprom_txgain_info trx_gain_info;
+    vfo_eeprom_master_info vfo_master_info;
     vfo_eeprom_cal_info vfo_cal_info;
 
     void update_clock_gen();

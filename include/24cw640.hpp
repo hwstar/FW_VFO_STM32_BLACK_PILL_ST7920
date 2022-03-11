@@ -27,12 +27,17 @@ class EEPROM_24CW640
     // Write a page of data (32 bytes)
     bool write_page(uint16_t page_num, void *buffer);
 
+    // Verify header
+    bool verify_header(uint16_t page_num, const char *recname, void *buffer);
+
+
+
     private:
    
     int slave_addr;
     int result;
 
-    const uint8_t EEPROM_WRTE = 0x40;
+    //const uint8_t EEPROM_WRTE = 0x40;
     const uint32_t EEPROM_TIMEOUT = 10;
 
 };
