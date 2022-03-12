@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <config.hpp>
 #include <event.hpp>
-#include <vfo.hpp>
 #include <knob.hpp>
 
 void KNOB::tuning(event_data ed, uint32_t event_subtype)
