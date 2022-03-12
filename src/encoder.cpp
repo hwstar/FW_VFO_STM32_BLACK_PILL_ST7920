@@ -114,13 +114,6 @@ void ENCODER::handler(event_data ed, uint32_t event_subtype)
             case EV_SUBTYPE_TICK_MS:
                 this->poll();
                 break;
-            case EV_SUBTYPE_ENCODER_CW:
-                pubsub.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CW, ed);
-                break;
-            case EV_SUBTYPE_ENCODER_CCW:
-                pubsub.fire(EVENT_VFO, EV_SUBTYPE_TUNE_CCW, ed);
-                break;
-
             default:
                 break;
         }

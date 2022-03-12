@@ -143,7 +143,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 // Define if dual 5351 board with 4 outputs is used
 //
 
-//#define QUAD_OUTPUT_VFO_BOARD 
+#define QUAD_OUTPUT_VFO_BOARD 
 
 //
 // VFO Module test mode skips checking for other boards in the system when testing the VFO standalone

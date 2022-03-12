@@ -10,6 +10,7 @@
 #include <keypad.hpp>
 #include <comm.hpp>
 #include <encoder.hpp>
+#include <knob.hpp>
 #include <error.hpp>
 #include <display.hpp>
 #include <vfo.hpp>
@@ -39,6 +40,8 @@ SWITCHES switches;
 KEYPAD keypad;
 // Encoder object
 ENCODER encoder;
+// Knob object
+KNOB knob(KM_TUNING);
 // Display object
 DISPLAY_DRIVER display;
 // Command parser
@@ -140,8 +143,8 @@ void setup()
   void error_subscriber(event_data ed, uint32_t event_subtype);
   void txprotect_subscriber(event_data ed, uint32_t event_subtype);
 
-  pubsub.subscribe(encoder_subscriber, EVENT_ENCODER|EVENT_TICK);
-  pubsub.subscribe(encoder_knob_subscriber, EVENT_ENCODER_KNOB); // Knob press = increment change
+  pubsub.subscribe(encoder_subscriber, EVENT_TICK);
+  pubsub.subscribe(encoder_knob_subscriber, EVENT_TICK|EVENT_ENCODER|EVENT_ENCODER_KNOB); 
   pubsub.subscribe(display_subscriber, EVENT_DISPLAY|EVENT_TICK);
   pubsub.subscribe(serial_output_subscriber, EVENT_DISPLAY);
   pubsub.subscribe(vfo_subscriber, EVENT_VFO|EVENT_TICK);
@@ -158,32 +161,13 @@ void setup()
 
 }
 
-
 //
-// Action when a encoder knob is pressed
+// Action when a encoder knob is pressed or turned
 //
 
 void encoder_knob_subscriber(event_data ed, uint32_t event_subtype)
 {
-  uint32_t new_incr;
-  uint32_t curr_incr;
-  switch(event_subtype) {
-    case EV_SUBTYPE_ENCODER_PRESSED:
-      // Select VFO increment locally instead of putting this code in the VFO class.
-      curr_incr = vfo.incr_get();
-      if(curr_incr == 1000)
-        new_incr = 500;
-      else if(curr_incr == 500)
-        new_incr = 100;
-      else if(curr_incr == 100)
-        new_incr = 1000;
-      else
-        new_incr = 1000;
-      pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_INCR, new_incr);
-
-    default:
-      break;
-  }
+  knob.subscriber(ed, event_subtype);
 
 }
 
