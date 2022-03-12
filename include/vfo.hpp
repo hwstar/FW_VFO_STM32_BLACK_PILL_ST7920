@@ -62,6 +62,19 @@ typedef struct vfo_eeprom_cal_info {
 
 static_assert(sizeof(vfo_eeprom_cal_info) == 32, "Size of vfo_eeprom_cal_info not equal to eeprom page size");
 
+typedef struct vfo_eeprom_channel_info {
+    char recordname[8];
+    uint32_t vfo_freq_a;
+    uint32_t vfo_freq_b;
+    uint8_t mode;
+    uint8_t pad[15];
+} vfo_eeprom_channel_info;
+#define RECNAME_CHANNEL "CHANNEL"
+#define RECNUM_BASE_EEPROM_VFO_CHANNEL 128 // From 128 to 255
+#define RECNUM_LAST 255
+
+static_assert(sizeof(vfo_eeprom_channel_info) == 32, "Size of vfo_eeprom_channel_info not equal to eeprom page size");
+
 
 
 //
@@ -101,6 +114,7 @@ class VFO
     trx_eeprom_txgain_info trx_gain_info;
     vfo_eeprom_master_info vfo_master_info;
     vfo_eeprom_cal_info vfo_cal_info;
+    vfo_eeprom_channel_info vfo_channel_info;
 
     void update_clock_gen();
     void update_display_tx(uint8_t val);
@@ -111,6 +125,7 @@ class VFO
     void set_tx_gain(uint16_t gain);
     void store_tx_gain();
     void display_tuning_increment(uint32_t value);
+    void initialize_eeprom();
     
 };
 

@@ -45,6 +45,9 @@ static const vfo_eeprom_cal_info vfo_eeprom_calibration_init = {
     CLK_SOURCE_CAL_VALUE,
 };
 
+static const vfo_eeprom_channel_info vfo_eeprom_channel_init  ={
+    RECNAME_CHANNEL
+};
 
 #ifdef QUAD_OUTPUT_VFO_BOARD
 // VFO EEPROM initialization values for VFO calibration, and transceiver settings
@@ -433,6 +436,21 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
     }
 }
 
+void VFO::initialize_eeprom()
+{
+    int recnum;
+    SEL_I2C_BUS_VFO_EEPROM;
+    eeprom.write_page(RECNUM_EEPROM_MASTER, &vfo_master_info);
+    eeprom.write_page(RECNUM_EEPROM_VFO_CAL, &vfo_cal_info);
+    // Initialize channel memory
+    for(recnum = RECNUM_BASE_EEPROM_VFO_CHANNEL; recnum < RECNUM_LAST; recnum++){
+        eeprom.write_page(recnum, &vfo_channel_info);
+
+    }
+
+    SEL_I2C_BUS_EXT;
+}
+
 
 //
 // Initialize VFO
@@ -514,11 +532,8 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef INITIALIZE_VFO_EEPROM
     vfo_master_info = vfo_eeprom_master_init;
     vfo_cal_info = vfo_eeprom_calibration_init;
-    SEL_I2C_BUS_VFO_EEPROM;
-    eeprom.write_page(RECNUM_EEPROM_MASTER, &vfo_master_info);
-    eeprom.write_page(RECNUM_EEPROM_VFO_CAL, &vfo_cal_info);
-    SEL_I2C_BUS_EXT;
-
+    vfo_channel_info = vfo_eeprom_channel_init;
+    initialize_eeprom();
     #else
 
     //
@@ -530,18 +545,21 @@ bool VFO::begin(uint32_t init_freq)
             vfo_eeprom_invalid = true;
         if(!eeprom.verify_header(RECNUM_EEPROM_VFO_CAL, RECNAME_VFOCAL, &vfo_cal_info))
             vfo_eeprom_invalid = true;
+        if(!eeprom.verify_header(RECNUM_BASE_EEPROM_VFO_CHANNEL, RECNAME_CHANNEL, &vfo_cal_info))
+            vfo_eeprom_invalid = true;
     }
+    SEL_I2C_BUS_EXT;
     
     if(!have_vfo_eeprom || vfo_eeprom_invalid){
         vfo_master_info = vfo_eeprom_master_init;
         vfo_cal_info = vfo_eeprom_calibration_init;
+        vfo_channel_info = vfo_eeprom_channel_init;
         // If we have the vfo EEPROM, initialize it here
         if(have_trx_eeprom){
-            eeprom.write_page(RECNUM_EEPROM_MASTER, &vfo_master_info);
-            eeprom.write_page(RECNUM_EEPROM_VFO_CAL, &vfo_cal_info);
+            initialize_eeprom();
         }
     }
-    SEL_I2C_BUS_EXT;
+
     #endif
     #endif
 
