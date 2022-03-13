@@ -164,6 +164,62 @@ void DISPLAY_DRIVER::begin()
 
 }
 
+// 
+// Blank field inserts max_length - 1 spaces and a zero terminator
+//
+
+
+char *DISPLAY_DRIVER::blank_field(char *dest, uint8_t max_length)
+{
+    int i;
+    for(i = 0; i < max_length - 2; i++)
+      dest[i] = ' ';
+    dest[i] = 0;
+    return dest;
+}
+
+//
+// strncpy_wrapper. Inserts a zero at the end of the string in all cases.
+//
+
+char *DISPLAY_DRIVER::strncpy_z(char *dest, const char *source, uint8_t max_length)
+{
+    strncpy(dest, source, max_length);
+    dest[max_length - 1] = 0;
+    return dest;
+}
+
+//
+// Copy a string pointer if it is not NULL or zero length else copy an equivalent number of spaces into the destination string
+//
+
+char *DISPLAY_DRIVER::copy_string_field(char *dest, const char *source, uint8_t max_length)
+{
+  uint8_t i;
+
+  if(source && source[0])
+    strncpy_z(dest, source, max_length);
+  else{
+    blank_field(dest, max_length);
+  }
+  return dest;
+}
+
+//
+// Format frequency as a string from an unsigned 32 bit integer
+//
+
+char *DISPLAY_DRIVER::format_frequency(char *dest, uint32_t freq, uint8_t max_length)
+{
+  uint32_t mhz = freq/1000000UL;
+  uint32_t modulus = freq % 1000000UL;
+  snprintf(dest, max_length - 1,"%lu.%06lu", mhz, modulus);
+  dest[max_length - 1] = 0;
+
+  return dest;
+
+}
+
 //
 // Refresh the display
 //
@@ -173,26 +229,42 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     const char *modestr;
     const char *radiostr;
     const char *agcstr;
-    const char *clear12 = "            ";
     char freqall[20];
-    char line40[20];
+    char freqall_b[20];
+    char misc_str[20];
+    char commandstr[20];
     char tuning_increment_str[6];
 
     
 
-    uint32_t mhz = freq/1000000UL;
-    uint32_t modulus = freq % 1000000UL;
 
     // Convert variables to be displayed to strings
 
-    strncpy(line40, (keypad_keys && keypad_keys[0]) ? keypad_keys : clear12, sizeof(line40) - 1) ;
 
-    snprintf(freqall, sizeof(freqall) - 1,"%lu.%06lu", mhz, modulus);
+    // Command line
+  
+    copy_string_field(commandstr, keypad_keys, sizeof(commandstr));
+
+    // Frequency 
+    format_frequency(freqall, freq, sizeof(freqall));
+    // Mode
 
     if(sideband == MODE_USB)
         modestr = "USB";
     else
         modestr = "LSB";
+
+
+    // VFO B line (Only display if freq is nonzero)
+    if(freq_b)
+      format_frequency(freqall_b, freq_b, sizeof(freqall_b));
+    else
+      blank_field(freqall_b, sizeof(freqall_b));
+
+    // Miscellaneous line
+    copy_string_field(misc_str, misc_text, sizeof(misc_str));
+
+    // Status line
 
     if(agc_state)
         agcstr = "AGC";
@@ -227,11 +299,18 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     st7920.firstPage();
     do {
         /* all graphics commands have to appear within the loop body. */    
+        // VFO A and mode
         st7920.setFont(u8g2_font_ncenB14_tr);
         st7920.drawStr(0, 20, freqall);
         st7920.setFont(u8g2_font_ncenB08_tr);
         st7920.drawStr(100, 20, modestr);
-        st7920.drawStr(0, 40, line40);
+        // VFO B line
+        st7920.drawStr(0, 30, freqall_b );
+        // Miscellaneous line
+        st7920.drawStr(0, 40, misc_str);
+        // Command line
+        st7920.drawStr(0, 50, commandstr);
+        // Status line
         st7920.drawStr(55, 60, tuning_increment_str);
         st7920.drawStr(80, 60, agcstr);
         st7920.drawStr(110, 60, radiostr);
@@ -303,6 +382,12 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
             break;
         case EV_SUBTYPE_KEYPAD_ENTRY:
             keypad_keys = ed.cp;
+            break;
+        case EV_SUBTYPE_UPDATE_VFO_B_FREQ:
+            freq_b = ed.u32_val;
+            break;
+        case EV_SUBTYPE_UPDATE_MISC_TEXT:
+            misc_text = ed.cp;
             break;
         case EV_SUBTYPE_POST_ERROR:
             break;
