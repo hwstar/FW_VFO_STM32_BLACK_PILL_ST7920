@@ -10,6 +10,8 @@
 #define DISPLAY_NORMAL 0
 #define DISPLAY_ERROR 100
 
+#define VALID_STR(s) (s && s[0])
+
 /******************************************
 * Definitions
 ******************************************/
@@ -189,20 +191,22 @@ char *DISPLAY_DRIVER::strncpy_z(char *dest, const char *source, uint8_t max_leng
     return dest;
 }
 
+
 //
-// Copy a string pointer if it is not NULL or zero length else copy an equivalent number of spaces into the destination string
+// Store a new copy of the string in dest_storage if it is not NULL or zero length else return NULL
 //
 
-char *DISPLAY_DRIVER::copy_string_field(char *dest, const char *source, uint8_t max_length)
+
+char *DISPLAY_DRIVER::store_string_field(char *dest_storage, const char *source, uint8_t max_length)
 {
   uint8_t i;
 
-  if(source && source[0])
-    strncpy_z(dest, source, max_length);
+  if(VALID_STR(source))
+    strncpy_z(dest_storage, source, max_length);
   else{
-    blank_field(dest, max_length);
+    return NULL;
   }
-  return dest;
+  return dest_storage;
 }
 
 //
@@ -226,9 +230,12 @@ char *DISPLAY_DRIVER::format_frequency(char *dest, uint32_t freq, uint8_t max_le
 
 void DISPLAY_DRIVER::refresh_normal_operation()
 {
-    const char *modestr;
-    const char *radiostr;
-    const char *agcstr;
+    const char *p_modestr;
+    const char *p_radiostr;
+    const char *p_agcstr;
+    char *p_freq_b_str;
+    char *p_misc_str;
+    char *p_command_str;
     char freqall[20];
     char freqall_b[20];
     char misc_str[20];
@@ -243,46 +250,46 @@ void DISPLAY_DRIVER::refresh_normal_operation()
 
     // Command line
   
-    copy_string_field(commandstr, keypad_keys, sizeof(commandstr));
+    p_command_str = store_string_field(commandstr, keypad_keys, sizeof(commandstr));
 
     // Frequency 
     format_frequency(freqall, freq, sizeof(freqall));
     // Mode
 
     if(sideband == MODE_USB)
-        modestr = "USB";
+        p_modestr = "USB";
     else
-        modestr = "LSB";
+        p_modestr = "LSB";
 
 
     // VFO B line (Only display if freq is nonzero)
     if(freq_b)
-      format_frequency(freqall_b, freq_b, sizeof(freqall_b));
+      p_freq_b_str = format_frequency(freqall_b, freq_b, sizeof(freqall_b));
     else
-      blank_field(freqall_b, sizeof(freqall_b));
+      p_freq_b_str = NULL;
 
     // Miscellaneous line
-    copy_string_field(misc_str, misc_text, sizeof(misc_str));
+    p_misc_str = store_string_field(misc_str, misc_text, sizeof(misc_str));
 
     // Status line
 
     if(agc_state)
-        agcstr = "AGC";
+        p_agcstr = "AGC";
     else
-        agcstr = "";
+        p_agcstr = "";
     
     switch(trx_mode){
         case RADIO_RX:
-            radiostr = "RX";
+            p_radiostr = "RX";
             break;
         case RADIO_TX:
-            radiostr = "TX";
+            p_radiostr = "TX";
             break;
         case RADIO_TUNE:
-            radiostr = "TU";
+            p_radiostr = "TU";
             break;
         default:
-            radiostr = "";
+            p_radiostr = "";
     }
     if(tuning_increment <= 1000 && tuning_increment != 0){
       if(tuning_increment == 1000)
@@ -303,17 +310,20 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         st7920.setFont(u8g2_font_ncenB14_tr);
         st7920.drawStr(0, 20, freqall);
         st7920.setFont(u8g2_font_ncenB08_tr);
-        st7920.drawStr(100, 20, modestr);
+        st7920.drawStr(100, 20, p_modestr);
         // VFO B line
-        st7920.drawStr(0, 30, freqall_b );
+        if(VALID_STR(p_freq_b_str))
+          st7920.drawStr(0, 30, p_freq_b_str );
         // Miscellaneous line
-        st7920.drawStr(0, 40, misc_str);
+        if(VALID_STR(p_misc_str))
+          st7920.drawStr(0, 40, p_misc_str);
         // Command line
-        st7920.drawStr(0, 50, commandstr);
+        if(VALID_STR(p_command_str))
+          st7920.drawStr(0, 50, p_command_str);
         // Status line
         st7920.drawStr(55, 60, tuning_increment_str);
-        st7920.drawStr(80, 60, agcstr);
-        st7920.drawStr(110, 60, radiostr);
+        st7920.drawStr(80, 60, p_agcstr);
+        st7920.drawStr(110, 60, p_radiostr);
     } while ( st7920.nextPage() );
 
 }

@@ -9,7 +9,7 @@ class DISPLAY_DRIVER
 
     private:
     char *strncpy_z(char *dest, const char *source, uint8_t max_length);
-    char *copy_string_field(char *dest, const char *source, uint8_t max_length);
+    char *store_string_field(char *dest_storage, const char *source, uint8_t max_length);
     char *format_frequency(char *dest, uint32_t freq, uint8_t max_length);
     char *blank_field(char *dest, uint8_t max_length);
     void refresh_normal_operation();
