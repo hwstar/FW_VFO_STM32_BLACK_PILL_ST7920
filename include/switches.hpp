@@ -13,8 +13,6 @@ class SWITCHES
    
     private:
     uint8_t time_slot;
-    uint8_t ms_counter;
-   
 
 };
 

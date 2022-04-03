@@ -1,6 +1,10 @@
 #include <Arduino.h>
 #include <event.hpp>
 
+
+// 10ms Time slot
+event_data Time_slot;
+
 //
 // Constructor
 //

@@ -234,13 +234,12 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     const char *p_radiostr;
     const char *p_agcstr;
     char *p_freq_b_str;
-    char *p_misc_str;
     char *p_command_str;
     char freqall[20];
     char freqall_b[20];
-    char misc_str[20];
     char commandstr[20];
     char tuning_increment_str[6];
+    char meter_value[20];
 
     
 
@@ -268,8 +267,7 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     else
       p_freq_b_str = NULL;
 
-    // Miscellaneous line
-    p_misc_str = store_string_field(misc_str, misc_text, sizeof(misc_str));
+  
 
     // Status line
 
@@ -300,6 +298,18 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     else
       strncpy(tuning_increment_str, "TIE", 4); // Tuning increment error
 
+    // Format meter value
+    if(meter_info.mode == EVMM_SWR){
+      char swr_str[6];
+      // Clip value to full scale if at full scale value or higher, or less than 0.
+      if(meter_info.value > meter_info.full_scale || meter_info.value < 0)
+        meter_info.value = meter_info.full_scale;
+      dtostrf(meter_info.value, 5, 2, swr_str);
+      snprintf(meter_value, sizeof(meter_value), "%s: %s", meter_info.legend, swr_str);
+    }
+    else{
+      meter_value[0] = 0;
+    }
 
     // Update the display
 
@@ -314,9 +324,10 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         // VFO B line
         if(VALID_STR(p_freq_b_str))
           st7920.drawStr(0, 30, p_freq_b_str );
-        // Miscellaneous line
-        if(VALID_STR(p_misc_str))
-          st7920.drawStr(0, 40, p_misc_str);
+        // Meter line
+        if(VALID_STR(meter_value)){
+            st7920.drawStr(0, 40, meter_value);
+        }
         // Command line
         if(VALID_STR(p_command_str))
           st7920.drawStr(0, 50, p_command_str);
@@ -396,9 +407,6 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
         case EV_SUBTYPE_UPDATE_VFO_B_FREQ:
             freq_b = ed.u32_val;
             break;
-        case EV_SUBTYPE_UPDATE_MISC_TEXT:
-            misc_text = ed.cp;
-            break;
         case EV_SUBTYPE_POST_ERROR:
             break;
         case EV_SUBTYPE_TICK_HUNDRED_MS:
@@ -410,6 +418,10 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
             break;
         case EV_SUBTYPE_SET_TUNING_INCREMENT:
             tuning_increment = ed.u16_val;
+            break;
+        
+        case EV_SUBTYPE_METER_UPDATE:
+            meter_info = *((ed_meter_info *) ed.vp);
             break;
             
         default:

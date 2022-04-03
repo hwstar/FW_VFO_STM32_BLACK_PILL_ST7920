@@ -7,6 +7,7 @@
 #include <vfo.hpp>
 #include <24cw640.hpp>
 #include <mcp4725.hpp>
+#include <mcp3422.hpp>
 #include <si5351_ek_wrapper.hpp>
 #ifdef QUAD_OUTPUT_VFO_BOARD
 #include <pca9546.hpp>
@@ -111,6 +112,7 @@ PCA9554 trx(TRX_I2C_ADDR);
 BANDSEL band_select;
 EEPROM_24CW640 eeprom(EEPROM_I2C_ADDR);
 DAC_MCP4725 trx_dac(TRX_DAC_I2C_ADDR);
+MCP3422 swr_adc;
 
 
 
@@ -208,7 +210,7 @@ uint32_t VFO::get_freq()
 void VFO::ptt_set(uint8_t mode)
 {
     static uint16_t ptt_count;
-
+  
     if(RADIO_RX == mode){
         is_txing = false;
         last_ptt_mode = mode;
@@ -378,6 +380,84 @@ bool VFO::set_freq (uint32_t freq)
 }
 
 //
+// Service ADC sources which are shown on the display as meters
+//
+
+
+void VFO::service_metering(event_data ed)
+{
+    if(ed.u32_val != ETS_METERING)
+        return;
+
+    float swr_gamma;
+
+    ed_meter_info minfo = {0};
+
+    minfo.mode = EVMM_CLEAR;
+    
+    if(!is_txing){
+    #ifdef S_METER_ADC
+        metering_tx_state = 0;
+        if(ed.u32_val == ETS_METERING){
+            s_meter_reading = analogRead(S_METER_ADC);
+        }
+    #endif
+    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);
+    }
+    else if (swr_adc.present()){
+        if(ed.u32_val == ETS_METERING ){
+            switch(metering_tx_state){
+                case 0: // Select forward voltage channel
+                    swr_adc.select_channel(0);
+                    metering_tx_state++;
+                    break;
+
+                case 1: // Read forward voltage, select reverse channel
+                    swr_adc.read(swr_forward_voltage);
+                    swr_adc.select_channel(1);
+                    metering_tx_state++;
+                    break;
+
+                case 2:
+                    swr_adc.read(swr_reverse_voltage);
+                    metering_tx_state++;
+                    break; // DEBUG
+
+                case 3:
+                    
+                    // Calculate SWR
+                    if(last_ptt_mode == RADIO_TUNE){
+                        minfo.mode = EVMM_SWR;
+                        swr_gamma = ((float) swr_reverse_voltage)/((float) swr_forward_voltage);
+                        swr = (1.0 + abs(swr_gamma))/(1.0 - abs(swr_gamma));
+                        minfo.value =  swr;
+                        minfo.full_scale = 5.0;
+                        minfo.legend = "SWR";
+                    } else if (last_ptt_mode == RADIO_TX) {
+                        minfo.mode = EVMM_TX_POWER;
+                        minfo.value_u16 = minfo.full_scale_u16 = minfo.peak_value_u16 = 0; // TODO map output power to watt numbers
+                        minfo.legend = "PWR";
+                    }
+                    // Send the meter info
+                    pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);
+                    // Select channel 0, and start the conversion.
+                    swr_adc.select_channel(0);
+                    metering_tx_state = 1;
+        
+                    break;
+
+                default:
+                    metering_tx_state = 0;
+                    break;
+            }
+        }
+
+    }
+
+}
+
+
+//
 // VFO event subscriber
 //
 
@@ -425,6 +505,7 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             display_tuning_increment(tuning_knob_increment);
             break;
         case EV_SUBTYPE_TICK_MS:
+            service_metering(ed);
             break;
 
         case EV_SUBTYPE_TICK_HUNDRED_MS:
@@ -482,6 +563,10 @@ bool VFO::begin(uint32_t init_freq)
         pubsub.fire(EVENT_ERROR,EV_SUBTYPE_ERR_NO_TRX); // TRX board not present
     }
 
+    // SWR ADC initialization
+    // One shot operation, gain = 0, 12 bits.
+    swr_adc.begin(SWR_BRIDGE_DAC_ADDR, true, 0, 0);
+    
     #ifdef QUAD_OUTPUT_VFO_BOARD
     // Check for presence of VFO EEPROM U602
     have_vfo_eeprom = false;

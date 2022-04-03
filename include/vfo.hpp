@@ -104,11 +104,20 @@ class VFO
     uint8_t trx_save;
     uint8_t last_ptt_mode;
     uint8_t band_index;
+    uint8_t metering_tx_state;
     uint32_t vfo_freq;
     uint32_t high_injection_freq;
     uint32_t low_injection_freq;
     uint32_t tuning_knob_increment;
-    int32_t tx_filter_offset;
+    uint32_t tx_filter_offset;
+    #ifdef S_METER_ADC
+    uint32_t s_meter_reading;
+    #endif
+    int32_t swr_forward_voltage;
+    int32_t swr_reverse_voltage;
+   
+    float swr;
+
     trx_eeprom_master_info trx_master_info;
     trx_eeprom_if_info trx_if_info;
     trx_eeprom_txgain_info trx_gain_info;
@@ -126,6 +135,7 @@ class VFO
     void store_tx_gain();
     void display_tuning_increment(uint32_t value);
     void initialize_eeprom();
+    void service_metering(event_data ed);
     
 };
 

@@ -52,8 +52,6 @@ ERROR_HANDLER error;
 TX_PROTECT txprotect;
 
 
-// 10ms Time slot
-event_data Time_slot;
 
 //
 // Arduino setup function
@@ -73,6 +71,7 @@ void setup()
   pinMode(PIN_KEYPAD_R2, INPUT_PULLDOWN);
   pinMode(PIN_KEYPAD_R3, INPUT_PULLDOWN);
   pinMode(PIN_KEYPAD_R4, INPUT_PULLDOWN);
+  pinMode(S_METER_ADC, INPUT);
 
   // Outputs
   pinMode(PIN_STM32_LED, OUTPUT);
@@ -90,6 +89,13 @@ void setup()
   pinMode(PIN_KEYPAD_C2, OUTPUT);
   pinMode(PIN_KEYPAD_C3, OUTPUT);
   pinMode(PIN_KEYPAD_C4, OUTPUT);
+
+  #ifdef S_METER_ADC
+  // ADC setup
+  analogReadResolution(12);
+  analogRead(S_METER_ADC);
+  #endif
+
 
  // Peripheral pin mux setup
 
@@ -121,9 +127,9 @@ void setup()
   error.begin();
   
   // Initialize Switches
-  switches.begin(0);
+  switches.begin(ETS_SWITCHES);
   // Initialize Keypad
-  keypad.begin(2);
+  keypad.begin(ETS_KEYPAD);
   // Initialize txprotect
   txprotect.begin();
   // Initialize Encoder

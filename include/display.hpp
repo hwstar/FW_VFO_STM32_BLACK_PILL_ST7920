@@ -1,5 +1,6 @@
 #ifndef __DISPLAY_HPP__
 
+
 class DISPLAY_DRIVER
 {
     public:
@@ -16,6 +17,8 @@ class DISPLAY_DRIVER
     void refresh_error_message();
 
 
+    ed_error_info *p_err_info;
+    ed_meter_info meter_info;
     uint32_t freq;
     uint32_t freq_b;
     uint32_t tuning_increment;
@@ -25,7 +28,7 @@ class DISPLAY_DRIVER
     uint8_t agc_state;
     char *keypad_keys;
     char *misc_text;
-    ed_error_info *p_err_info;
+  
 
 };
 

@@ -44,12 +44,13 @@
 #define PIN_STM32_LED PC13 // Black pill LED.
 #define PIN_TEST_OUTPUT PA3
 
+// ADC inputs
+#define S_METER_ADC PA0 // Define ADC pin for S Meter if it is going to be used
+
 //
 // Unused pins
-// 
-// PA0
+//
 // PA2
-// PA3
 // PA4
 // PA11 - USB DM
 // PA12 - USB DP
@@ -70,6 +71,7 @@
 #define TRX_DAC_I2C_ADDR 0x62       // Transceiver MCP4725 TXGAIN DAC
 #define BPF_I2C_ADDR 0x39           // Band pass filter control
 #define LPF_I2C_ADDR 0x3A           // Low pass filter control
+#define SWR_BRIDGE_DAC_ADDR 0x68    // SWR bridge DAC 
 
 
 /*
@@ -138,6 +140,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 /*
 * Build configurations
 */
+
 
 //
 // Define if dual 5351 board with 4 outputs is used

@@ -1,5 +1,11 @@
 #ifndef __EVENT_HPP__
 
+// Time slot defintiions
+#define ETS_METERING 2
+#define ETS_KEYPAD 4
+#define ETS_SWITCHES 5
+
+// Event mask bits
 #define EVENT_ALL 0xFFFFFFFF
 #define EVENT_KEYPAD_PARSER 0x00000001
 #define EVENT_SERIAL 0x00000002
@@ -12,6 +18,8 @@
 #define EVENT_TICK 0x40000000
 #define EVENT_ERROR 0x80000000
 
+
+// Event Subtypes
 #define EV_SUBTYPE_NONE 0
 #define EV_SUBTYPE_SET_FREQ 1
 #define EV_SUBTYPE_SET_INCR 2
@@ -37,12 +45,12 @@
 #define EV_SUBTYPE_DISPLAY_ERROR 22
 #define EV_SUBTYPE_SET_TUNING_INCREMENT 23
 #define EV_SUBTYPE_UPDATE_VFO_B_FREQ 24
-#define EV_SUBTYPE_UPDATE_MISC_TEXT 25
+#define EV_SUBTYPE_METER_UPDATE 25
 
 
 
 
-
+// Event error codes
 #define EV_SUBTYPE_ERR_NO_BPF 0x80000001
 #define EV_SUBTYPE_ERR_NO_LPF 0x80000002
 #define EV_SUBTYPE_ERR_NO_TRX 0x80000003  
@@ -60,6 +68,7 @@
 
 
 
+
 #define MAX_SUBS 32
 
 typedef union event_data {
@@ -67,6 +76,7 @@ typedef union event_data {
     char char_val;
     uint16_t u16_val;
     uint32_t u32_val;
+    float float_val;
     void *vp;
     char *cp;
 } event_data;
@@ -76,6 +86,30 @@ typedef struct event_table {
     uint32_t filter;
 } event_table;
 
+// Meter modes
+#define EVMM_CLEAR 0
+#define EVMM_SMETER 1
+#define EVMM_SWR 2
+#define EVMM_TX_POWER 3
+
+typedef struct ed_meter_info {
+    uint8_t mode;
+    uint16_t value_u16;
+    uint16_t peak_value_u16;
+    uint16_t full_scale_u16;
+    float value;
+    float peak_value;
+    float full_scale;
+    const char *legend;
+} ed_meter_info;
+
+#define ERROR_MAX_LINE_LENGTH 30
+typedef struct ed_error_info {
+    uint16_t errcode;
+    uint16_t errlevel;
+    char line_1[ERROR_MAX_LINE_LENGTH];
+    char line_2[ERROR_MAX_LINE_LENGTH];
+} ed_error_info;
 
 class EVENT 
 {
@@ -100,6 +134,7 @@ class EVENT
 };
 
 extern EVENT pubsub;
+extern event_data Time_slot;
 
 #define __EVENT_HPP__
 #endif

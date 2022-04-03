@@ -18,11 +18,7 @@ void SWITCHES::handler(event_data ed, uint32_t event_subtype)
     event_data ed_zero;
 
     if(event_subtype == EV_SUBTYPE_TICK_MS){
-        if(ms_counter < 10)
-            ms_counter++;
-        else
-            ms_counter = 0;
-        if(ms_counter == time_slot) { // Only check switches when time slot matches ms_counter on a 10ms interval
+        if(ed.u32_val == time_slot) { // Only check switches when time slot matches ms_counter on a 10ms interval
             ed_zero.u32_val = 0UL;
             // Read switches
             ptt = !digitalRead(PIN_PTT);
