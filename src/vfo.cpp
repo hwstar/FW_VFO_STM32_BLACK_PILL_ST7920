@@ -407,12 +407,16 @@ bool VFO::set_freq (uint32_t freq)
 void VFO::service_metering(event_data ed)
 {
     if(ed.u32_val != ETS_METERING)
-        return;
+        return; // Not a metering tick
+
+    // Below executed every 10ms.
+    static uint16_t peak_timer;
+    static ed_meter_info minfo;
 
     float swr_gamma;
+    uint8_t new_peak_value;
 
-    ed_meter_info minfo = {0};
-
+    
     minfo.mode = EVMM_CLEAR;
     
     if(!is_txing){
@@ -420,7 +424,75 @@ void VFO::service_metering(event_data ed)
         metering_tx_state = 0;
         if(ed.u32_val == ETS_METERING){
             s_meter_reading = analogRead(S_METER_ADC);
-        }
+            // Map ADC value to s-unit number
+            minfo.full_scale_u16 = 10;
+            if(s_meter_reading > trx_smeter_info.s_meter_values[0]){
+                minfo.value_u16 = 0;
+                new_peak_value = 0;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[1]){
+                minfo.value_u16 = 0;
+                new_peak_value = 0;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[2]){
+                minfo.value_u16 = 2;
+                new_peak_value = 3;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[3]){
+                minfo.value_u16 = 3;
+                new_peak_value = 4;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[4]){
+                minfo.value_u16 = 4;
+                new_peak_value = 5;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[5]){
+                minfo.value_u16 = 5;
+                new_peak_value = 6;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[6]){
+                minfo.value_u16 = 6;
+                new_peak_value = 7;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[7]){
+                minfo.value_u16 = 7;
+                new_peak_value = 8;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[8]){
+                minfo.value_u16 = 8;
+                new_peak_value = 9;
+            }
+            else if(s_meter_reading > trx_smeter_info.s_meter_values[9]){
+                minfo.value_u16 = 9;
+                new_peak_value = 10;
+            }
+            else {
+                minfo.value_u16 = 10;
+                new_peak_value = 20;
+            }
+            
+
+            // Update S meter peak hold value
+
+            if(new_peak_value >= minfo.peak_value_u16){
+                peak_timer = 100;
+                minfo.peak_value_u16 = new_peak_value;
+            }
+            else{
+                if(!peak_timer){
+                    minfo.peak_value_u16 = new_peak_value;
+                }
+                else{
+                    peak_timer--;
+                }
+            }
+      
+
+            minfo.full_scale_u16 = 10;
+            minfo.legend = "SIG";
+            minfo.mode = EVMM_SMETER;  
+        }  
+        
     #endif
     pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);
     }
@@ -486,6 +558,7 @@ void VFO::service_metering(event_data ed)
 void VFO::subscriber(event_data ed, uint32_t event_subtype )
 {
     uint16_t vfo_incr;
+
     
     switch(event_subtype){
         case EV_SUBTYPE_TUNE_CW:

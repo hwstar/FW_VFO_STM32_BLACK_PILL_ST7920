@@ -252,7 +252,11 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     char freqall_b[20];
     char commandstr[20];
     char tuning_increment_str[6];
-    char meter_value[30];
+    char meter_value_str[6];
+    char dot_str[11];
+  
+
+  
 
     
 
@@ -313,8 +317,6 @@ void DISPLAY_DRIVER::refresh_normal_operation()
 
     // Format meter value
     if(meter_info.mode == EVMM_SWR){
-      char swr_str[6];
-      char dot_str[10+1];
       uint8_t scaled_value;
       // Clip value to full scale if at full scale value or higher, or less than 0.
       if(meter_info.value > meter_info.full_scale || meter_info.value < 0)
@@ -322,11 +324,48 @@ void DISPLAY_DRIVER::refresh_normal_operation()
       scaled_value = (uint8_t) (meter_info.value *(10.0/meter_info.full_scale));
       if(scaled_value > 10)
         scaled_value = 10;
-      dtostrf(meter_info.value, 5, 2, swr_str);
-      snprintf(meter_value, sizeof(meter_value), "%s: %s %s", meter_info.legend, swr_str, gen_dots(dot_str, scaled_value));
+      dtostrf(meter_info.value, 5, 2, meter_value_str);
+    }
+    else if(meter_info.mode == EVMM_SMETER){
+      const char *s_unit_str;
+      gen_dots(dot_str, meter_info.value_u16);
+      switch(meter_info.peak_value_u16){
+        case 3:
+          s_unit_str = "S3";
+          break;
+        case 4:
+          s_unit_str = "S4";
+          break;
+        case 5:
+          s_unit_str = "S5";
+          break;
+        case 6:
+          s_unit_str = "S6";
+          break;
+        case 7:
+          s_unit_str = "S7";
+          break;
+        case 8:
+          s_unit_str = "S8";
+          break;
+        case 9:
+          s_unit_str = "S9";
+          break;
+        case 10:
+          s_unit_str = "+10";
+          break;
+        case 20:
+          s_unit_str = "+20";
+          break;
+        default:
+          s_unit_str = "S0";
+          break;
+      }
+      strncpy(meter_value_str, s_unit_str, sizeof(meter_value_str));
+      
     }
     else{
-      meter_value[0] = 0;
+      meter_value_str[0] = 0;
     }
 
     // Update the display
@@ -343,8 +382,10 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         if(VALID_STR(p_freq_b_str))
           st7920.drawStr(0, 30, p_freq_b_str );
         // Meter line
-        if(VALID_STR(meter_value)){
-            st7920.drawStr(0, 40, meter_value);
+        if(VALID_STR(meter_value_str) && VALID_STR(meter_info.legend)){
+            st7920.drawStr(0, 40, meter_info.legend);
+            st7920.drawStr(30,40, meter_value_str);
+            st7920.drawStr(60,40, dot_str);
         }
         // Command line
         if(VALID_STR(p_command_str))
