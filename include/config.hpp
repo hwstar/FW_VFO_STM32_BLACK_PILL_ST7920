@@ -174,6 +174,17 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 #define SYSTEM_NAME  "LEFTY TRX" // Name for all of the boards comprising a transceiver
 #define TRX_BOARD_NAME "TRXC2" // Transceiver board name
+//#define SER_NUM_0002 "0002"
+#define SER_NUM_0003 "0003"
+
+#ifdef SER_NUM_0002
+#define TRX_SER_NUM SER_NUM_0002
+#endif
+#ifdef SER_NUM_0003
+#define TRX_SER_NUM SER_NUM_0003
+#endif
+
+#define VFO_SER_NUM "0001"
 
 //
 // First IF intiialization values
@@ -202,26 +213,50 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 #else
 #define VFO_BOARD_NAME "VFOC2" // Board name for concept 2 VFO with on-board eeprom
+#ifdef  SER_NUM_0002
 #define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
 #define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
 #define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6dB point crystal filter passband
 #define SECOND_IF_LOWER_M6DB 12284950 // Second IF lower -6dB point crystal filter passband
 #endif
+#ifdef  SER_NUM_0003
+#define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
+#define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
+#define SECOND_IF_UPPER_M6DB 12287564 // Second IF upper -6dB point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12285077 // Second IF lower -6dB point crystal filter passband
+#endif
+
+
+#endif
 
 
 // Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
-// R1713 set to 475mV p-p at TP1701. These constants are used to flatten out the TX power across all bands
+// R1713 set to 3.5V p-p at TP1701. These constants are used to flatten out the TX power across all bands
 // from the TRX motherboard through the low pass filter bank, the power amplifier, and the low pass filter bank.
 // If any of these boards are swapped or re-ajusted, these gain settings will need to be updated.
 
 
 // These constants equate to are the DAC codes needed to produce an output voltage on the TRX DAC, U401
-// which sets the gain of the 12.288 IF amplifiers.
+// which sets the gain of the 12.288 MHz IF amplifiers.
 
 // TRX DAC U401 is referenced to 5.0V and has 4096 steps. The voltage per step is therefore 1.22mV.
+// These are stored in the TRX eeprom.
 
 
-#ifndef QUAD_OUTPUT_VFO_BOARD
+#ifndef QUAD_OUTPUT_VFO_BOARD // Etherkit
+
+#define TRX_TXGAIN_160M 1500
+#define TRX_TXGAIN_80M 1450
+#define TRX_TXGAIN_40M 1600
+#define TRX_TXGAIN_20M 1650
+#define TRX_TXGAIN_17M 1700
+#define TRX_TXGAIN_15M 1650
+#define TRX_TXGAIN_12M 1725
+#define TRX_TXGAIN_10M 1950
+
+#else // Quad output board SI5351
+
+#ifdef SER_NUM_0002 // C2 Rev X1
 
 #define TRX_TXGAIN_160M 1500
 #define TRX_TXGAIN_80M 1450
@@ -232,16 +267,37 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define TRX_TXGAIN_12M 1725
 #define TRX_TXGAIN_10M 1950
 
-#else // Etherkit SI5351
+#endif
 
-#define TRX_TXGAIN_160M 1500
-#define TRX_TXGAIN_80M 1450
-#define TRX_TXGAIN_40M 1600
-#define TRX_TXGAIN_20M 1650
-#define TRX_TXGAIN_17M 1700
-#define TRX_TXGAIN_15M 1650
-#define TRX_TXGAIN_12M 1725
-#define TRX_TXGAIN_10M 1950
+#ifdef SER_NUM_0003 // C2 Rev A 3.5V pp tune osc, TX RF amp 17dB instead of 7 dB
+
+#define TRX_TXGAIN_160M 1460
+#define TRX_TXGAIN_80M 1510
+#define TRX_TXGAIN_40M 1460
+#define TRX_TXGAIN_20M 1500
+#define TRX_TXGAIN_17M 1550
+#define TRX_TXGAIN_15M 1580
+#define TRX_TXGAIN_12M 1750
+#define TRX_TXGAIN_10M 1850
+
+#endif
+
+// S Meter Calibration
+// These constants map ADC counts to S-Units
+// These are stored in the TRX eeprom
+
+#ifdef SER_NUM_0003
+#define S_UNIT_2    1355 // -115 dBm
+#define S_UNIT_3    1347 // -109 dBm
+#define S_UNIT_4    1328 // -103 dBm
+#define S_UNIT_5    1288 // -97 dBm
+#define S_UNIT_6    1210 // -91 dBm
+#define S_UNIT_7    1072 // -85 dBm
+#define S_UNIT_8    873  // -79 dBm
+#define S_UNIT_9    638  // -73 dBm
+#define S_UNIT_10   522  // -63 dBm
+#define S_UNIT_20   469  // -53 dBm
+#endif 
 
 #endif
 

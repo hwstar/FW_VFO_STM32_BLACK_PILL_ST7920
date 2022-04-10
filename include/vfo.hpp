@@ -13,14 +13,16 @@
 typedef struct trx_eeprom_master_info {
     char recordname[8];
     char boardname[16];
-    uint8_t pad[8];
+    char serialnum[5];
+    uint8_t pad[3];
 } trx_eeprom_master_info;
 static_assert(sizeof(trx_eeprom_master_info) == 32, "Size of trx_eeprom_master_info not equal to eeprom page size");
 
 typedef struct vfo_eeprom_master_info {
     char recordname[8];
     char boardname[16];
-    uint8_t pad[8];
+    char serialnum[5];
+    uint8_t pad[3];
 } vfo_eeprom_master_info;
 static_assert(sizeof(vfo_eeprom_master_info) == 32, "Size of vfo_eeprom_master_info not equal to eeprom page size");
 
@@ -43,13 +45,21 @@ static_assert(sizeof(trx_eeprom_if_info) == 32, "Size of trx_eeprom_if_info not 
 
 typedef struct trx_eeprom_txgain_info { 
     char recordname[8];
-    uint16_t tx_gain_values[8]; // 24 bytes total
+    uint16_t tx_gain_values[8]; // 16 bytes total
     uint8_t pad[8];
 } trx_eeprom_txgain_info;
 #define RECNAME_TXGAIN "TXGAIN"
 #define RECNUM_EEPROM_TXGAIN 24
 
-static_assert(sizeof(trx_eeprom_txgain_info) == 32, "Size of trx_eeprom_txgain_info not equal to eeprom page size");
+typedef struct trx_eeprom_smeter_info { 
+    char recordname[8];
+    uint16_t s_meter_values[10]; // 20 bytes total
+    uint8_t pad[4];
+} trx_eeprom_smeter_info;
+#define RECNAME_SMETER "SMETER"
+#define RECNUM_EEPROM_SMETER 25
+
+static_assert(sizeof(trx_eeprom_smeter_info) == 32, "Size of trx_eeprom_eeprom_info not equal to eeprom page size");
 
 
 typedef struct vfo_eeprom_cal_info {
@@ -121,10 +131,11 @@ class VFO
     trx_eeprom_master_info trx_master_info;
     trx_eeprom_if_info trx_if_info;
     trx_eeprom_txgain_info trx_gain_info;
+    trx_eeprom_smeter_info trx_smeter_info;
     vfo_eeprom_master_info vfo_master_info;
     vfo_eeprom_cal_info vfo_cal_info;
     vfo_eeprom_channel_info vfo_channel_info;
-
+    
     void update_clock_gen();
     void update_display_tx(uint8_t val);
     bool set_freq (uint32_t freq); 

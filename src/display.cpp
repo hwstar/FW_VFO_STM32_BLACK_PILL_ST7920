@@ -225,6 +225,19 @@ char *DISPLAY_DRIVER::format_frequency(char *dest, uint32_t freq, uint8_t max_le
 }
 
 //
+// Create a string with a prescrbed number of dots.
+// String length is N dots + 1
+//
+
+char *DISPLAY_DRIVER::gen_dots(char *dots, uint8_t number)
+{
+  uint8_t i;
+  for (i = 0; i < number; i++)
+    dots[i] = '.';
+  dots[i] = 0;
+  return dots;
+}
+//
 // Refresh the display
 //
 
@@ -239,7 +252,7 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     char freqall_b[20];
     char commandstr[20];
     char tuning_increment_str[6];
-    char meter_value[20];
+    char meter_value[30];
 
     
 
@@ -301,11 +314,16 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     // Format meter value
     if(meter_info.mode == EVMM_SWR){
       char swr_str[6];
+      char dot_str[10+1];
+      uint8_t scaled_value;
       // Clip value to full scale if at full scale value or higher, or less than 0.
       if(meter_info.value > meter_info.full_scale || meter_info.value < 0)
         meter_info.value = meter_info.full_scale;
+      scaled_value = (uint8_t) (meter_info.value *(10.0/meter_info.full_scale));
+      if(scaled_value > 10)
+        scaled_value = 10;
       dtostrf(meter_info.value, 5, 2, swr_str);
-      snprintf(meter_value, sizeof(meter_value), "%s: %s", meter_info.legend, swr_str);
+      snprintf(meter_value, sizeof(meter_value), "%s: %s %s", meter_info.legend, swr_str, gen_dots(dot_str, scaled_value));
     }
     else{
       meter_value[0] = 0;

@@ -37,7 +37,8 @@
 
 static const trx_eeprom_master_info trx_eeprom_master_init = {
         RECNAME_MASTER,
-        TRX_BOARD_NAME      
+        TRX_BOARD_NAME,
+        TRX_SER_NUM      
 };
 
 
@@ -54,7 +55,8 @@ static const vfo_eeprom_channel_info vfo_eeprom_channel_init  ={
 // VFO EEPROM initialization values for VFO calibration, and transceiver settings
 static const vfo_eeprom_master_info vfo_eeprom_master_init = {
         RECNAME_MASTER,
-        VFO_BOARD_NAME      
+        VFO_BOARD_NAME,
+        VFO_SER_NUM    
 };
 #endif
 
@@ -84,6 +86,24 @@ static const trx_eeprom_txgain_info trx_eeprom_txgain_init = {
         TRX_TXGAIN_10M
     }
 
+};
+
+// TRX EEPROM initialization values for S meter
+
+static const trx_eeprom_smeter_info trx_eeprom_smeter_init = {
+    RECNAME_SMETER, // Record name
+    { //ADC to S-UNIT map
+        S_UNIT_2,
+        S_UNIT_3,
+        S_UNIT_4,
+        S_UNIT_5,
+        S_UNIT_6,
+        S_UNIT_7,
+        S_UNIT_8,
+        S_UNIT_9,
+        S_UNIT_10,
+        S_UNIT_20
+    }
 };
 
 // Band information data structure
@@ -430,6 +450,8 @@ void VFO::service_metering(event_data ed)
                         minfo.mode = EVMM_SWR;
                         swr_gamma = ((float) swr_reverse_voltage)/((float) swr_forward_voltage);
                         swr = (1.0 + abs(swr_gamma))/(1.0 - abs(swr_gamma));
+                        if(swr != swr)
+                            swr = INFINITY;
                         minfo.value =  swr;
                         minfo.full_scale = 5.0;
                         minfo.legend = "SWR";
@@ -653,9 +675,11 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef INITIALIZE_TRX_EEPROM
     trx_master_info = trx_eeprom_master_init;
     trx_gain_info = trx_eeprom_txgain_init;
+    trx_smeter_info = trx_eeprom_smeter_init;
     trx_if_info = trx_eeprom_if_init;
     eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
     eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+    eeprom.write_page(RECNUM_EEPROM_SMETER, &trx_smeter_info);
     eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
     #else
     // Normal initialization
@@ -667,18 +691,23 @@ bool VFO::begin(uint32_t init_freq)
             trx_eeprom_invalid = true;
         
         if(!eeprom.verify_header(RECNUM_EEPROM_TXGAIN, RECNAME_TXGAIN, &trx_gain_info))
-            trx_eeprom_invalid = true; 
+            trx_eeprom_invalid = true;
+        
+        if(!eeprom.verify_header(RECNUM_EEPROM_SMETER, RECNAME_SMETER, &trx_smeter_info))
+            trx_eeprom_invalid = true;  
     }
 
     if(!have_trx_eeprom || trx_eeprom_invalid){
         // Load constants from config.hpp 
         trx_master_info = trx_eeprom_master_init;
         trx_gain_info = trx_eeprom_txgain_init;
+        trx_smeter_info = trx_eeprom_smeter_init;
         trx_if_info = trx_eeprom_if_init;
         // If we have the trx EEPROM, initialize it here
         if(have_trx_eeprom){
             eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
             eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
+            eeprom.write_page(RECNUM_EEPROM_SMETER, &trx_smeter_info);
             eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
         }
 
