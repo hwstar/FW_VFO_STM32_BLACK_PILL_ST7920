@@ -258,8 +258,8 @@ void DISPLAY_DRIVER::refresh_normal_operation()
 
   
 
-    
-
+    // Clear dot string
+    dot_str[0] = 0;
 
     // Convert variables to be displayed to strings
 
@@ -328,7 +328,11 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     }
     else if(meter_info.mode == EVMM_SMETER){
       const char *s_unit_str;
-      gen_dots(dot_str, meter_info.value_u16);
+      #ifndef VFO_SHOW_CAL_INFO
+      gen_dots(dot_str, meter_info.value_u16); // Show dots if not set up to show calibration info
+      #else
+      itoa((int16_t) meter_info.smeter_adc_value, dot_str, 10); // Show raw smeter ADC value instead of dots
+      #endif
       switch(meter_info.peak_value_u16){
         case 3:
           s_unit_str = "S3";
@@ -364,6 +368,18 @@ void DISPLAY_DRIVER::refresh_normal_operation()
       strncpy(meter_value_str, s_unit_str, sizeof(meter_value_str));
       
     }
+    else if(meter_info.mode == EVMM_TX_POWER){
+        meter_value_str[0] = ' ';
+        meter_value_str[1] = 0;
+
+        #ifdef VFO_SHOW_CAL_INFO
+        itoa((int16_t) meter_info.forward_power_adc_value, dot_str, 10); // Show raw smeter ADC value instead of dots
+        #else
+          gen_dots(dot_str, meter_info.value_u16); // Show dots if not set up to show calibration info
+        #endif
+
+      }
+
     else{
       meter_value_str[0] = 0;
     }
@@ -385,7 +401,8 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         if(VALID_STR(meter_value_str) && VALID_STR(meter_info.legend)){
             st7920.drawStr(0, 40, meter_info.legend);
             st7920.drawStr(30,40, meter_value_str);
-            st7920.drawStr(60,40, dot_str);
+            if(VALID_STR(dot_str))
+              st7920.drawStr(60,40, dot_str);
         }
         // Command line
         if(VALID_STR(p_command_str))

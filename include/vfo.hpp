@@ -59,7 +59,19 @@ typedef struct trx_eeprom_smeter_info {
 #define RECNAME_SMETER "SMETER"
 #define RECNUM_EEPROM_SMETER 25
 
-static_assert(sizeof(trx_eeprom_smeter_info) == 32, "Size of trx_eeprom_eeprom_info not equal to eeprom page size");
+static_assert(sizeof(trx_eeprom_smeter_info) == 32, "Size of trx_eeprom_smeter_info not equal to eeprom page size");
+
+
+typedef struct trx_eeprom_txpower_info { 
+    char recordname[8];
+    uint16_t txpower_values[8]; // 20 bytes total
+    uint8_t pad[8];
+} trx_eeprom_txpower_info;
+#define RECNAME_TXPOWER "TXPOWER"
+#define RECNUM_EEPROM_TXPOWER 26
+
+static_assert(sizeof(trx_eeprom_txpower_info) == 32, "Size of trx_eeprom_txpower_info not equal to eeprom page size");
+
 
 
 typedef struct vfo_eeprom_cal_info {
@@ -132,6 +144,7 @@ class VFO
     trx_eeprom_if_info trx_if_info;
     trx_eeprom_txgain_info trx_gain_info;
     trx_eeprom_smeter_info trx_smeter_info;
+    trx_eeprom_txpower_info trx_txpower_info;
     vfo_eeprom_master_info vfo_master_info;
     vfo_eeprom_cal_info vfo_cal_info;
     vfo_eeprom_channel_info vfo_channel_info;

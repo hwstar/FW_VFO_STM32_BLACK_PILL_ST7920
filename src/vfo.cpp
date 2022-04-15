@@ -33,6 +33,15 @@
 #endif
 
 
+// Calculated from the first IF and second IF constants in config.hpp
+
+#define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
+#define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
+
+#define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
+
+
+
 // TRX EEPROM initialization values for IF information
 
 static const trx_eeprom_master_info trx_eeprom_master_init = {
@@ -105,6 +114,22 @@ static const trx_eeprom_smeter_info trx_eeprom_smeter_init = {
         S_UNIT_20
     }
 };
+
+static const trx_eeprom_txpower_info trx_eeprom_txpower_init = {
+    RECNAME_SMETER, // Record name
+    { //ADC to S-UNIT map
+        TX_POWER_LEVEL_1,
+        TX_POWER_LEVEL_2,
+        TX_POWER_LEVEL_3,
+        TX_POWER_LEVEL_4,
+        TX_POWER_LEVEL_5,
+        TX_POWER_LEVEL_6,
+        TX_POWER_LEVEL_7,
+        TX_POWER_LEVEL_8
+    }
+};
+
+
 
 // Band information data structure
 
@@ -428,47 +453,47 @@ void VFO::service_metering(event_data ed)
             minfo.full_scale_u16 = 10;
             if(s_meter_reading > trx_smeter_info.s_meter_values[0]){
                 minfo.value_u16 = 0;
-                new_peak_value = 0;
+                new_peak_value = 0; // Cannot differentiate S1 and S0
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[1]){
-                minfo.value_u16 = 0;
-                new_peak_value = 0;
+                minfo.value_u16 = 1;
+                new_peak_value = 2;  // S2
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[2]){
                 minfo.value_u16 = 2;
-                new_peak_value = 3;
+                new_peak_value = 3; // S3
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[3]){
                 minfo.value_u16 = 3;
-                new_peak_value = 4;
+                new_peak_value = 4; // S4
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[4]){
                 minfo.value_u16 = 4;
-                new_peak_value = 5;
+                new_peak_value = 5; // S5
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[5]){
                 minfo.value_u16 = 5;
-                new_peak_value = 6;
+                new_peak_value = 6; // S6
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[6]){
                 minfo.value_u16 = 6;
-                new_peak_value = 7;
+                new_peak_value = 7; // S7
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[7]){
                 minfo.value_u16 = 7;
-                new_peak_value = 8;
+                new_peak_value = 8; // S8
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[8]){
                 minfo.value_u16 = 8;
-                new_peak_value = 9;
+                new_peak_value = 9; // S9
             }
             else if(s_meter_reading > trx_smeter_info.s_meter_values[9]){
                 minfo.value_u16 = 9;
-                new_peak_value = 10;
+                new_peak_value = 10; // S9+10
             }
             else {
                 minfo.value_u16 = 10;
-                new_peak_value = 20;
+                new_peak_value = 20; // S9+20
             }
             
 
@@ -487,7 +512,7 @@ void VFO::service_metering(event_data ed)
                 }
             }
       
-
+            minfo.smeter_adc_value = s_meter_reading;
             minfo.full_scale_u16 = 10;
             minfo.legend = "SIG";
             minfo.mode = EVMM_SMETER;  
@@ -522,15 +547,35 @@ void VFO::service_metering(event_data ed)
                         minfo.mode = EVMM_SWR;
                         swr_gamma = ((float) swr_reverse_voltage)/((float) swr_forward_voltage);
                         swr = (1.0 + abs(swr_gamma))/(1.0 - abs(swr_gamma));
-                        if(swr != swr)
+                        if(swr != swr) // Test for NaN
                             swr = INFINITY;
                         minfo.value =  swr;
                         minfo.full_scale = 5.0;
+                        minfo.forward_power_adc_value = swr_forward_voltage;
                         minfo.legend = "SWR";
                     } else if (last_ptt_mode == RADIO_TX) {
                         minfo.mode = EVMM_TX_POWER;
-                        minfo.value_u16 = minfo.full_scale_u16 = minfo.peak_value_u16 = 0; // TODO map output power to watt numbers
+                        minfo.value_u16 = minfo.full_scale_u16 = minfo.peak_value_u16 = 0;
                         minfo.legend = "PWR";
+                        minfo.forward_power_adc_value = swr_forward_voltage;
+                        if(swr_forward_voltage >= trx_txpower_info.txpower_values[7])
+                            minfo.value_u16 = 8;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[6])
+                            minfo.value_u16 = 7;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[5])
+                            minfo.value_u16 = 6;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[4])
+                            minfo.value_u16 = 5;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[3])
+                            minfo.value_u16 = 4;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[2])
+                            minfo.value_u16 = 3;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[1])
+                            minfo.value_u16 = 2;
+                        else if(swr_forward_voltage >= trx_txpower_info.txpower_values[0])
+                            minfo.value_u16 = 1;
+                        else
+                            minfo.value_u16 = 0;
                     }
                     // Send the meter info
                     pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);
@@ -544,8 +589,7 @@ void VFO::service_metering(event_data ed)
                     metering_tx_state = 0;
                     break;
             }
-        }
-
+        } 
     }
 
 }
@@ -753,6 +797,7 @@ bool VFO::begin(uint32_t init_freq)
     eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
     eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
     eeprom.write_page(RECNUM_EEPROM_SMETER, &trx_smeter_info);
+    eeprom.write_page(RECNUM_EEPROM_TXPOWER, &trx_txpower_info);
     eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
     #else
     // Normal initialization
@@ -768,6 +813,9 @@ bool VFO::begin(uint32_t init_freq)
         
         if(!eeprom.verify_header(RECNUM_EEPROM_SMETER, RECNAME_SMETER, &trx_smeter_info))
             trx_eeprom_invalid = true;  
+        
+        if(!eeprom.verify_header(RECNUM_EEPROM_TXPOWER, RECNAME_TXPOWER, &trx_txpower_info))
+            trx_eeprom_invalid = true;  
     }
 
     if(!have_trx_eeprom || trx_eeprom_invalid){
@@ -775,12 +823,15 @@ bool VFO::begin(uint32_t init_freq)
         trx_master_info = trx_eeprom_master_init;
         trx_gain_info = trx_eeprom_txgain_init;
         trx_smeter_info = trx_eeprom_smeter_init;
+        trx_txpower_info = trx_eeprom_txpower_init;
+
         trx_if_info = trx_eeprom_if_init;
         // If we have the trx EEPROM, initialize it here
         if(have_trx_eeprom){
             eeprom.write_page(RECNUM_EEPROM_MASTER, &trx_master_info);
             eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
             eeprom.write_page(RECNUM_EEPROM_SMETER, &trx_smeter_info);
+            eeprom.write_page(RECNUM_EEPROM_TXPOWER, &trx_txpower_info);
             eeprom.write_page(RECNUM_EEPROM_IF, &trx_if_info);
         }
 
