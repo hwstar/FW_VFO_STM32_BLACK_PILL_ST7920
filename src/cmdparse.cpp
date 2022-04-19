@@ -197,10 +197,17 @@ void CMDPARSE::handler(event_data ed, uint32_t event_subtype)
             m = (uint32_t)(c - '0');
             state = 1;
         }
+        else if ('B' == c){
+            pubsub.fire(EVENT_VFO, EV_SUBTYPE_ADVANCE_BAND);
+            reset();
+        }
         else if ('C' == c)
         { // Command prefix?
             state = 100;
         }
+        else{
+            reset();
+        }   
         break;
 
         //

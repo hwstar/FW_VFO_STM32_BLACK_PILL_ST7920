@@ -5,7 +5,6 @@ class KNOB {
 public:
     KNOB(uint8_t initial_mode){
         mode = initial_mode;
-        cur_tuning_incr = 1000;
     }
 
     void set_mode(uint8_t new_mode){
@@ -17,8 +16,6 @@ public:
 
 private:
     uint8_t mode;
-    uint16_t cur_tuning_incr;
-
     void tuning(event_data ed, uint32_t event_subtype);
 
 };

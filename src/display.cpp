@@ -306,9 +306,12 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         default:
             p_radiostr = "";
     }
-    if(tuning_increment <= 1000 && tuning_increment != 0){
-      if(tuning_increment == 1000)
+    if(tuning_increment <= 10000 && tuning_increment != 0){
+      if(tuning_increment == 10000)
+        strncpy(tuning_increment_str,"10k", 3);
+      else if(tuning_increment == 1000)
         strncpy(tuning_increment_str,"1k", 3);
+
       else
         sprintf(tuning_increment_str, "%d", tuning_increment);
     }

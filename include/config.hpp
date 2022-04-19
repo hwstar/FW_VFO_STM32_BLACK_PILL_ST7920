@@ -78,54 +78,64 @@
 * Band configuration
 */
 
+#define MAX_BANDS 8
+
 enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BAND_20M = 0x10, BAND_40M = 0x20, BAND_80M = 0x40, BAND_160M = 0x80};
 
 
 // Band 1
 #define BAND_FILTER_1       BAND_160M
 #define BAND_EDGE_LOW_1     1800000UL // Values are in Hz.
+#define BAND_LANDING_1      1900000UL
 #define BAND_EDGE_HIGH_1    2000000UL
 #define BAND_DEF_USB_1      false
 
 // Band 2
 #define BAND_FILTER_2       BAND_80M
 #define BAND_EDGE_LOW_2     3500000UL
+#define BAND_LANDING_2      3900000UL
 #define BAND_EDGE_HIGH_2    4000000UL
 #define BAND_DEF_USB_2      false
 
 // Band 3
 #define BAND_FILTER_3       BAND_40M
 #define BAND_EDGE_LOW_3     7000000UL
+#define BAND_LANDING_3      7200000UL
 #define BAND_EDGE_HIGH_3    7300000UL
 #define BAND_DEF_USB_3      false
 
 // Band 4
 #define BAND_FILTER_4       BAND_20M
 #define BAND_EDGE_LOW_4     14000000UL
+#define BAND_LANDING_4      14250000UL
 #define BAND_EDGE_HIGH_4    14350000UL
 #define BAND_DEF_USB_4      true
 
 // Band 5
 #define BAND_FILTER_5       BAND_17M
 #define BAND_EDGE_LOW_5     18068000UL
+#define BAND_LANDING_5      18130000UL
 #define BAND_EDGE_HIGH_5    18168000UL
 #define BAND_DEF_USB_5      true
 
 // Band 6
 #define BAND_FILTER_6       BAND_15M
 #define BAND_EDGE_LOW_6     21000000UL
+#define BAND_LANDING_6      21250000UL
 #define BAND_EDGE_HIGH_6    21450000UL
 #define BAND_DEF_USB_6      true
 
 // Band 7
 #define BAND_FILTER_7       BAND_12M
 #define BAND_EDGE_LOW_7     24890000UL
+#define BAND_LANDING_7      24970000UL
 #define BAND_EDGE_HIGH_7    24990000UL 
 #define BAND_DEF_USB_7      true
 
 // Band 8
 #define BAND_FILTER_8       BAND_10M
 #define BAND_EDGE_LOW_8     28000000UL
+#define BAND_LANDING_8      28300000UL
 #define BAND_EDGE_HIGH_8    30000000UL
 #define BAND_DEF_USB_8      true
 
@@ -155,6 +165,12 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 //#define VFO_MODULE_TEST_MODE
 
 //
+// Show VFO calibration info on display (Currently limited to SMETER ADC values, and TX power)
+//
+
+//#define VFO_SHOW_CAL_INFO
+
+//
 // Initialize VFO EEPROM (supported on Quad VFO only)
 //
 
@@ -174,16 +190,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 #define SYSTEM_NAME  "LEFTY TRX" // Name for all of the boards comprising a transceiver
 #define TRX_BOARD_NAME "TRXC2" // Transceiver board name
-//#define SER_NUM_0002 "0002"
-#define SER_NUM_0003 "0003"
-
-#ifdef SER_NUM_0002
-#define TRX_SER_NUM SER_NUM_0002
-#endif
-#ifdef SER_NUM_0003
-#define TRX_SER_NUM SER_NUM_0003
-#endif
-
+#define TRX_SER_NUM "0003"
 #define VFO_SER_NUM "0001"
 
 //
@@ -205,29 +212,12 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 // Contants specific to the different versions of VFO boards used
 //
 
-#ifndef QUAD_OUTPUT_VFO_BOARD
-#define REF_TCXO_FREQ_HZ 25000000 // 25 MHz for VFO with Etherkit breakout board
-#define CLK_SOURCE_CAL_VALUE -4560 // VFO calibration value for the Etherkit SI3531 in prototype S/N #1
-#define SECOND_IF_UPPER_M6DB 12287533 // Second IF upper -6dB point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12284967 // Second IF lower -6dB point crystal filter passband
-
-#else
 #define VFO_BOARD_NAME "VFOC2" // Board name for concept 2 VFO with on-board eeprom
-#ifdef  SER_NUM_0002
-#define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
-#define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
-#define SECOND_IF_UPPER_M6DB 12287500 // Second IF upper -6dB point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12284950 // Second IF lower -6dB point crystal filter passband
-#endif
-#ifdef  SER_NUM_0003
 #define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
 #define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
 #define SECOND_IF_UPPER_M6DB 12287564 // Second IF upper -6dB point crystal filter passband
 #define SECOND_IF_LOWER_M6DB 12285077 // Second IF lower -6dB point crystal filter passband
-#endif
 
-
-#endif
 
 
 // Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
@@ -243,63 +233,48 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 // These are stored in the TRX eeprom.
 
 
-#ifndef QUAD_OUTPUT_VFO_BOARD // Etherkit
 
-#define TRX_TXGAIN_160M 1500
-#define TRX_TXGAIN_80M 1450
-#define TRX_TXGAIN_40M 1600
-#define TRX_TXGAIN_20M 1650
-#define TRX_TXGAIN_17M 1700
-#define TRX_TXGAIN_15M 1650
-#define TRX_TXGAIN_12M 1725
-#define TRX_TXGAIN_10M 1950
+#define TRX_TXGAIN_160M 1450
+#define TRX_TXGAIN_80M 1435
+#define TRX_TXGAIN_40M 1485
+#define TRX_TXGAIN_20M 1525
+#define TRX_TXGAIN_17M 1540
+#define TRX_TXGAIN_15M 1510
+#define TRX_TXGAIN_12M 1560
+#define TRX_TXGAIN_10M 1640
 
-#else // Quad output board SI5351
-
-#ifdef SER_NUM_0002 // C2 Rev X1
-
-#define TRX_TXGAIN_160M 1500
-#define TRX_TXGAIN_80M 1450
-#define TRX_TXGAIN_40M 1600
-#define TRX_TXGAIN_20M 1650
-#define TRX_TXGAIN_17M 1700
-#define TRX_TXGAIN_15M 1650
-#define TRX_TXGAIN_12M 1725
-#define TRX_TXGAIN_10M 1950
-
-#endif
-
-#ifdef SER_NUM_0003 // C2 Rev A 3.5V pp tune osc, TX RF amp 17dB instead of 7 dB
-
-#define TRX_TXGAIN_160M 1460
-#define TRX_TXGAIN_80M 1510
-#define TRX_TXGAIN_40M 1460
-#define TRX_TXGAIN_20M 1500
-#define TRX_TXGAIN_17M 1550
-#define TRX_TXGAIN_15M 1580
-#define TRX_TXGAIN_12M 1750
-#define TRX_TXGAIN_10M 1850
-
-#endif
 
 // S Meter Calibration
 // These constants map ADC counts to S-Units
+// Constants are with respect to first enclosed radio.
 // These are stored in the TRX eeprom
 
-#ifdef SER_NUM_0003
-#define S_UNIT_2    1355 // -115 dBm
-#define S_UNIT_3    1347 // -109 dBm
-#define S_UNIT_4    1328 // -103 dBm
-#define S_UNIT_5    1288 // -97 dBm
-#define S_UNIT_6    1210 // -91 dBm
-#define S_UNIT_7    1072 // -85 dBm
-#define S_UNIT_8    873  // -79 dBm
-#define S_UNIT_9    638  // -73 dBm
-#define S_UNIT_10   522  // -63 dBm
-#define S_UNIT_20   469  // -53 dBm
-#endif 
 
-#endif
+#define S_UNIT_2    1355 // -115 dBm
+#define S_UNIT_3    1330 // -109 dBm
+#define S_UNIT_4    1315 // -103 dBm
+#define S_UNIT_5    1280 // -97 dBm
+#define S_UNIT_6    1206 // -91 dBm
+#define S_UNIT_7    1075 // -85 dBm
+#define S_UNIT_8    885  // -79 dBm
+#define S_UNIT_9    698  // -73 dBm
+#define S_UNIT_10   530  // -63 dBm
+#define S_UNIT_20   470  // -53 dBm
+
+
+// Relative TX power for adc forward power measurement
+// Actual power varies depending on the operating band.
+// This should not be relied upon to give an accurate power measurement
+
+#define TX_POWER_LEVEL_1 330
+#define TX_POWER_LEVEL_2 440
+#define TX_POWER_LEVEL_3 550
+#define TX_POWER_LEVEL_4 660
+#define TX_POWER_LEVEL_5 770
+#define TX_POWER_LEVEL_6 880
+#define TX_POWER_LEVEL_7 1100
+#define TX_POWER_LEVEL_8 1282
+
 
 /*
 * END TRX eeprom constants
@@ -317,16 +292,6 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define RADIO_RX 0
 #define RADIO_TX 1
 #define RADIO_TUNE 2
-
-
-
-
-// Calculated from the first IF and second IF constants above
-
-#define SECOND_IF_CARRIER  (SECOND_IF_UPPER_M6DB + 300)
-#define SECOND_IF_BW6DB  (SECOND_IF_UPPER_M6DB - SECOND_IF_LOWER_M6DB)
-
-#define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
 
 
 #define __CONFIG_HPP__

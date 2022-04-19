@@ -136,16 +136,19 @@ static const trx_eeprom_txpower_info trx_eeprom_txpower_init = {
 typedef struct band_info {
     BANDS band;
     uint32_t lower_edge;
+    uint32_t landing;
     uint32_t upper_edge;
     bool usb_def;
 } band_info;
 
-// Class instantiations
 
 const si5351_clock clock_outputs[3] = { SI5351_CLK0, SI5351_CLK1, SI5351_CLK2 };
 const si5351_drive drive_strengths[4] = { SI5351_DRIVE_2MA, SI5351_DRIVE_4MA, SI5351_DRIVE_6MA, SI5351_DRIVE_8MA };
 uint8_t page_buffer[EEPROM_24CW640_PAGE_SIZE];
-band_info band_table[8];
+band_info band_table[MAX_BANDS];
+
+// Class instantiations
+
 SI5351_EK_WRAPPER si5351a;
 #ifdef QUAD_OUTPUT_VFO_BOARD
 SI5351_EK_WRAPPER si5351b;
@@ -392,14 +395,14 @@ bool VFO::set_freq (uint32_t freq)
 
     // Validate VFO frequency
 
-    for(i = 0; i < 8; i++) {
+    for(i = 0; i < MAX_BANDS; i++) {
         if(freq < band_table[i].upper_edge){
             if(freq > band_table[i].lower_edge){
                 break;
             }
         }
     }
-    if (i >= 8)
+    if (i >= MAX_BANDS)
         return false;
 
     vfo_freq = freq;
@@ -602,7 +605,7 @@ void VFO::service_metering(event_data ed)
 void VFO::subscriber(event_data ed, uint32_t event_subtype )
 {
     uint16_t vfo_incr;
-
+    uint8_t bi;
     
     switch(event_subtype){
         case EV_SUBTYPE_TUNE_CW:
@@ -639,10 +642,30 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
         case EV_SUBTYPE_TUNE_RELEASED:
             ptt_set(RADIO_RX);
             break;
-        case EV_SUBTYPE_SET_INCR:
-            tuning_knob_increment = ed.u32_val;
+        case EV_SUBTYPE_ADVANCE_INCR:
+            if(tuning_knob_increment == 10000UL)
+                tuning_knob_increment = 1000UL;
+            else if(tuning_knob_increment == 1000UL)
+                tuning_knob_increment = 500UL;
+            else if(tuning_knob_increment == 500UL)
+                tuning_knob_increment = 100UL;
+            else if(tuning_knob_increment == 100UL)
+                tuning_knob_increment = 10UL;
+            else
+                tuning_knob_increment = 10000UL;
+
             display_tuning_increment(tuning_knob_increment);
             break;
+
+        case EV_SUBTYPE_ADVANCE_BAND:
+            bi = band_index;
+            bi++;
+            if(bi == MAX_BANDS)
+                bi = 0;
+            set_freq(band_table[bi].landing);
+            sideband_set(MODE_DEFAULT); // Set default for band
+            break;
+
         case EV_SUBTYPE_TICK_MS:
             service_metering(ed);
             break;
@@ -911,6 +934,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_1
         band_table[0].band = BAND_FILTER_1;
         band_table[0].lower_edge = BAND_EDGE_LOW_1;
+        band_table[0].landing = BAND_LANDING_1;
         band_table[0].upper_edge = BAND_EDGE_HIGH_1;
         band_table[0].usb_def = BAND_DEF_USB_1;
     #endif
@@ -918,6 +942,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_2
         band_table[1].band = BAND_FILTER_2;
         band_table[1].lower_edge = BAND_EDGE_LOW_2;
+        band_table[1].landing = BAND_LANDING_2;
         band_table[1].upper_edge = BAND_EDGE_HIGH_2;
         band_table[1].usb_def = BAND_DEF_USB_2;
     #endif
@@ -925,6 +950,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_3
         band_table[2].band = BAND_FILTER_3;
         band_table[2].lower_edge = BAND_EDGE_LOW_3;
+        band_table[2].landing = BAND_LANDING_3;
         band_table[2].upper_edge = BAND_EDGE_HIGH_3;
         band_table[2].usb_def = BAND_DEF_USB_3;
     #endif
@@ -932,6 +958,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_4
         band_table[3].band = BAND_FILTER_4;
         band_table[3].lower_edge = BAND_EDGE_LOW_4;
+        band_table[3].landing = BAND_LANDING_4;
         band_table[3].upper_edge = BAND_EDGE_HIGH_4;
         band_table[3].usb_def = BAND_DEF_USB_4;
     #endif
@@ -939,6 +966,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_5
         band_table[4].band = BAND_FILTER_5;
         band_table[4].lower_edge = BAND_EDGE_LOW_5;
+        band_table[4].landing = BAND_LANDING_5;
         band_table[4].upper_edge = BAND_EDGE_HIGH_5;
         band_table[4].usb_def = BAND_DEF_USB_5;
     #endif
@@ -946,6 +974,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_6
         band_table[5].band = BAND_FILTER_6;
         band_table[5].lower_edge = BAND_EDGE_LOW_6;
+        band_table[5].landing = BAND_LANDING_6;
         band_table[5].upper_edge = BAND_EDGE_HIGH_6;
         band_table[5].usb_def = BAND_DEF_USB_6;
     #endif
@@ -953,6 +982,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_7
         band_table[6].band = BAND_FILTER_7;
         band_table[6].lower_edge = BAND_EDGE_LOW_7;
+        band_table[6].landing = BAND_LANDING_7;
         band_table[6].upper_edge = BAND_EDGE_HIGH_7;
         band_table[6].usb_def = BAND_DEF_USB_7;
     #endif
@@ -960,6 +990,7 @@ bool VFO::begin(uint32_t init_freq)
     #ifdef BAND_FILTER_7
         band_table[7].band = BAND_FILTER_8;
         band_table[7].lower_edge = BAND_EDGE_LOW_8;
+        band_table[7].landing = BAND_LANDING_8;
         band_table[7].upper_edge = BAND_EDGE_HIGH_8;
         band_table[7].usb_def = BAND_DEF_USB_8;
     #endif
