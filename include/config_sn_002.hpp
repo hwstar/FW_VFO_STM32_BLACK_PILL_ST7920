@@ -46,6 +46,9 @@
 
 // ADC inputs
 #define S_METER_ADC PA0 // Define ADC pin for S Meter if it is going to be used
+//#define VMON_ADC PA4    // Define ADC pin for Voltage Monitor if it is going to be used.
+
+//
 
 //
 // Unused pins
@@ -274,6 +277,13 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define TX_POWER_LEVEL_7 1100
 #define TX_POWER_LEVEL_8 1282
 
+//
+// If the VMON_ADC pin is defined, define the calibration value
+//
+
+#ifdef VMON_ADC
+#define VMON_ADC_CAL_FACTOR 1.0
+#endif 
 
 /*
 * END TRX eeprom constants

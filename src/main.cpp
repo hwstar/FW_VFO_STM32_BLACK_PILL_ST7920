@@ -71,7 +71,9 @@ void setup()
   pinMode(PIN_KEYPAD_R2, INPUT_PULLDOWN);
   pinMode(PIN_KEYPAD_R3, INPUT_PULLDOWN);
   pinMode(PIN_KEYPAD_R4, INPUT_PULLDOWN);
+  #ifdef S_METER_ADC
   pinMode(S_METER_ADC, INPUT);
+  #endif
 
   // Outputs
   pinMode(PIN_STM32_LED, OUTPUT);

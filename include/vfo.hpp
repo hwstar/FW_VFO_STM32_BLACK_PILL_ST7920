@@ -127,19 +127,20 @@ class VFO
     uint8_t last_ptt_mode;
     uint8_t band_index;
     uint8_t metering_tx_state;
+    uint16_t vmon_adc_reading;
     uint32_t vfo_freq;
     uint32_t high_injection_freq;
     uint32_t low_injection_freq;
     uint32_t tuning_knob_increment;
     uint32_t tx_filter_offset;
-    #ifdef S_METER_ADC
     uint32_t s_meter_reading;
-    #endif
+    uint32_t vmon_millivolts;
     int32_t swr_forward_voltage;
     int32_t swr_reverse_voltage;
-   
+    
     float swr;
-
+    float vmon_value;
+  
     trx_eeprom_master_info trx_master_info;
     trx_eeprom_if_info trx_if_info;
     trx_eeprom_txgain_info trx_gain_info;

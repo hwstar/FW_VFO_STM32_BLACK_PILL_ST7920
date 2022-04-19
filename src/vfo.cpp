@@ -447,79 +447,98 @@ void VFO::service_metering(event_data ed)
     
     minfo.mode = EVMM_CLEAR;
     
-    if(!is_txing){
+    if((!is_txing) && (ed.u32_val == ETS_METERING)){
+    #ifdef VMON_ADC
+        float x;
+        uint16_t vmon_adc_reading;
+        // Read vmon pin
+        vmon_adc_reading = analogRead(VMON_ADC);
+        // Calibration adjustment
+        x = round(VMON_ADC_CAL_FACTOR * vmon_adc_reading);
+        // Multiply by ADC volts per count
+        x = round(x * 0.000805);
+        // Scale to account for the voltage divider and to convert to millivolts
+        x *= 5000.0;
+        // Average 10 readings
+        x = ((((9.0 * vmon_value)) + x) / 10.0);
+        // Update result
+        vmon_value = round(x);
+        
+        minfo.mode = EVMM_VMON; 
+        minfo.value_u16 = (uint16_t) vmon_value;
+        pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);
+    #endif
     #ifdef S_METER_ADC
         metering_tx_state = 0;
-        if(ed.u32_val == ETS_METERING){
-            s_meter_reading = analogRead(S_METER_ADC);
-            // Map ADC value to s-unit number
-            minfo.full_scale_u16 = 10;
-            if(s_meter_reading > trx_smeter_info.s_meter_values[0]){
-                minfo.value_u16 = 0;
-                new_peak_value = 0; // Cannot differentiate S1 and S0
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[1]){
-                minfo.value_u16 = 1;
-                new_peak_value = 2;  // S2
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[2]){
-                minfo.value_u16 = 2;
-                new_peak_value = 3; // S3
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[3]){
-                minfo.value_u16 = 3;
-                new_peak_value = 4; // S4
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[4]){
-                minfo.value_u16 = 4;
-                new_peak_value = 5; // S5
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[5]){
-                minfo.value_u16 = 5;
-                new_peak_value = 6; // S6
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[6]){
-                minfo.value_u16 = 6;
-                new_peak_value = 7; // S7
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[7]){
-                minfo.value_u16 = 7;
-                new_peak_value = 8; // S8
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[8]){
-                minfo.value_u16 = 8;
-                new_peak_value = 9; // S9
-            }
-            else if(s_meter_reading > trx_smeter_info.s_meter_values[9]){
-                minfo.value_u16 = 9;
-                new_peak_value = 10; // S9+10
-            }
-            else {
-                minfo.value_u16 = 10;
-                new_peak_value = 20; // S9+20
-            }
-            
+        s_meter_reading = analogRead(S_METER_ADC);
+        // Map ADC value to s-unit number
+        minfo.full_scale_u16 = 10;
+        if(s_meter_reading > trx_smeter_info.s_meter_values[0]){
+            minfo.value_u16 = 0;
+            new_peak_value = 0; // Cannot differentiate S1 and S0
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[1]){
+            minfo.value_u16 = 1;
+            new_peak_value = 2;  // S2
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[2]){
+            minfo.value_u16 = 2;
+            new_peak_value = 3; // S3
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[3]){
+            minfo.value_u16 = 3;
+            new_peak_value = 4; // S4
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[4]){
+            minfo.value_u16 = 4;
+            new_peak_value = 5; // S5
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[5]){
+            minfo.value_u16 = 5;
+            new_peak_value = 6; // S6
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[6]){
+            minfo.value_u16 = 6;
+            new_peak_value = 7; // S7
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[7]){
+            minfo.value_u16 = 7;
+            new_peak_value = 8; // S8
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[8]){
+            minfo.value_u16 = 8;
+            new_peak_value = 9; // S9
+        }
+        else if(s_meter_reading > trx_smeter_info.s_meter_values[9]){
+            minfo.value_u16 = 9;
+            new_peak_value = 10; // S9+10
+        }
+        else {
+            minfo.value_u16 = 10;
+            new_peak_value = 20; // S9+20
+        }
+        
 
-            // Update S meter peak hold value
+        // Update S meter peak hold value
 
-            if(new_peak_value >= minfo.peak_value_u16){
-                peak_timer = 100;
+        if(new_peak_value >= minfo.peak_value_u16){
+            peak_timer = 100;
+            minfo.peak_value_u16 = new_peak_value;
+        }
+        else{
+            if(!peak_timer){
                 minfo.peak_value_u16 = new_peak_value;
             }
             else{
-                if(!peak_timer){
-                    minfo.peak_value_u16 = new_peak_value;
-                }
-                else{
-                    peak_timer--;
-                }
+                peak_timer--;
             }
-      
-            minfo.smeter_adc_value = s_meter_reading;
-            minfo.full_scale_u16 = 10;
-            minfo.legend = "SIG";
-            minfo.mode = EVMM_SMETER;  
-        }  
+        }
+    
+        minfo.smeter_adc_value = s_meter_reading;
+        minfo.full_scale_u16 = 10;
+        minfo.legend = "SIG";
+        minfo.mode = EVMM_SMETER;  
+  
         
     #endif
     pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);

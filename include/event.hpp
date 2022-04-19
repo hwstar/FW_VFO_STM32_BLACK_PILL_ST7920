@@ -92,6 +92,7 @@ typedef struct event_table {
 #define EVMM_SMETER 1
 #define EVMM_SWR 2
 #define EVMM_TX_POWER 3
+#define EVMM_VMON 4
 
 typedef struct ed_meter_info {
     uint8_t mode;
