@@ -237,9 +237,10 @@ char *DISPLAY_DRIVER::gen_dots(char *dots, uint8_t number)
   dots[i] = 0;
   return dots;
 }
-//
-// Refresh the display
-//
+
+/*
+* Refresh the display in normal mode
+*/
 
 void DISPLAY_DRIVER::refresh_normal_operation()
 {
@@ -253,10 +254,12 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     char commandstr[20];
     char tuning_increment_str[6];
     char meter_value_str[6];
+    char meter_voltage_str[6];
     char dot_str[11];
   
-
-  
+    //
+    // Format the data to display
+    //
 
     // Clear dot string
     dot_str[0] = 0;
@@ -382,12 +385,18 @@ void DISPLAY_DRIVER::refresh_normal_operation()
         #endif
 
       }
-
     else{
       meter_value_str[0] = 0;
     }
+    #ifdef VMON_ADC
+    uint16_t volts = meter_info.vmon_value / 1000;
+    uint16_t tenths = (meter_info.vmon_value % 1000) / 100;
+    snprintf(meter_voltage_str,sizeof(meter_voltage_str),"%d.%dV", volts, tenths);
+    #endif
 
+    //
     // Update the display
+    //
 
     st7920.firstPage();
     do {
@@ -407,6 +416,11 @@ void DISPLAY_DRIVER::refresh_normal_operation()
             if(VALID_STR(dot_str))
               st7920.drawStr(60,40, dot_str);
         }
+        #ifdef VMON_ADC
+        if(VALID_STR(meter_voltage_str)){
+          st7920.drawStr(100, 40,meter_voltage_str);
+        }
+        #endif
         // Command line
         if(VALID_STR(p_command_str))
           st7920.drawStr(0, 50, p_command_str);
@@ -418,9 +432,9 @@ void DISPLAY_DRIVER::refresh_normal_operation()
 
 }
 
-//
-// Display error message
-//
+/*
+* Display error message
+*/
 
 void DISPLAY_DRIVER::refresh_error_message()
 {
@@ -461,9 +475,9 @@ void DISPLAY_DRIVER::refresh()
   }
 }
 
-//
-// Called from event.cpp when there is something to update
-//
+/*
+* Called from event.cpp when there is something to update
+*/
 
 void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
 {

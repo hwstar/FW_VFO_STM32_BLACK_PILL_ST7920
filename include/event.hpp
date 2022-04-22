@@ -101,6 +101,9 @@ typedef struct ed_meter_info {
     uint16_t full_scale_u16;
     uint16_t smeter_adc_value;
     uint16_t forward_power_adc_value;
+    #ifdef VMON_ADC
+    uint16_t vmon_value;
+    #endif
     float value;
     float peak_value;
     float full_scale;

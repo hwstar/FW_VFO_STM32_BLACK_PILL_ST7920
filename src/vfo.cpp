@@ -463,10 +463,7 @@ void VFO::service_metering(event_data ed)
         x = ((((9.0 * vmon_value)) + x) / 10.0);
         // Update result
         vmon_value = round(x);
-        
-        minfo.mode = EVMM_VMON; 
-        minfo.value_u16 = (uint16_t) vmon_value;
-        pubsub.fire(EVENT_DISPLAY, EV_SUBTYPE_METER_UPDATE, &minfo);
+        minfo.vmon_value = (uint16_t) vmon_value;
     #endif
     #ifdef S_METER_ADC
         metering_tx_state = 0;
@@ -681,6 +678,9 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             bi++;
             if(bi == MAX_BANDS)
                 bi = 0;
+            // Save last used freq. on current band
+            band_table[band_index].landing =  vfo_freq;
+            // Set landing freq on new band/
             set_freq(band_table[bi].landing);
             sideband_set(MODE_DEFAULT); // Set default for band
             break;
