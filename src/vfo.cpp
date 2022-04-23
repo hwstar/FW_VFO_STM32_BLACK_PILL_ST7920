@@ -41,6 +41,113 @@
 #define FIRST_TO_SECOND_IF_DELTA (FIRST_IF_FCENTER - SECOND_IF_CARRIER)
 
 
+// Band information data structure
+
+typedef struct band_info {
+    BANDS band;
+    uint32_t lower_edge;
+    uint32_t landing;
+    uint32_t upper_edge;
+    bool usb_def;
+} band_info;
+
+
+
+
+// Band Table
+
+static const band_info band_table[MAX_BANDS] = {
+#ifdef BAND_FILTER_1
+    {
+    BAND_FILTER_1,
+    BAND_EDGE_LOW_1,
+    BAND_LANDING_1,
+    BAND_EDGE_HIGH_1,
+    BAND_DEF_USB_1,
+    },
+#else
+    #error("BAND_FILTER_1 must be defined")
+#endif
+
+#ifdef BAND_FILTER_2
+    {
+    BAND_FILTER_2,
+    BAND_EDGE_LOW_2,
+    BAND_LANDING_2,
+    BAND_EDGE_HIGH_2,
+    BAND_DEF_USB_2,
+    },
+#else
+    {0},
+#endif
+#ifdef BAND_FILTER_3
+    {
+    BAND_FILTER_3,
+    BAND_EDGE_LOW_3,
+    BAND_LANDING_3,
+    BAND_EDGE_HIGH_3,
+    BAND_DEF_USB_3,
+    },
+#else
+    {0},
+#endif
+#ifdef BAND_FILTER_4
+    {
+    BAND_FILTER_4,
+    BAND_EDGE_LOW_4,
+    BAND_LANDING_4,
+    BAND_EDGE_HIGH_4,
+    BAND_DEF_USB_4,
+    },
+#else
+    {0},
+#endif
+#ifdef BAND_FILTER_5
+    {
+    BAND_FILTER_5,
+    BAND_EDGE_LOW_5,
+    BAND_LANDING_5,
+    BAND_EDGE_HIGH_5,
+    BAND_DEF_USB_5,
+    },
+#else
+    {0},
+#endif
+#ifdef BAND_FILTER_6
+    {
+    BAND_FILTER_6,
+    BAND_EDGE_LOW_6,
+    BAND_LANDING_6,
+    BAND_EDGE_HIGH_6,
+    BAND_DEF_USB_6,
+    },
+#else
+    {0},
+#endif
+#ifdef BAND_FILTER_7
+    {
+    BAND_FILTER_7,
+    BAND_EDGE_LOW_7,
+    BAND_LANDING_7,
+    BAND_EDGE_HIGH_7,
+    BAND_DEF_USB_7,
+    },
+#else
+    {0},
+#endif
+#ifdef BAND_FILTER_8
+    {
+    BAND_FILTER_8,
+    BAND_EDGE_LOW_8,
+    BAND_LANDING_8,
+    BAND_EDGE_HIGH_8,
+    BAND_DEF_USB_8,
+    },
+#else
+    {0},
+#endif
+};
+
 
 // TRX EEPROM initialization values for IF information
 
@@ -131,21 +238,10 @@ static const trx_eeprom_txpower_info trx_eeprom_txpower_init = {
 
 
 
-// Band information data structure
-
-typedef struct band_info {
-    BANDS band;
-    uint32_t lower_edge;
-    uint32_t landing;
-    uint32_t upper_edge;
-    bool usb_def;
-} band_info;
-
-
 const si5351_clock clock_outputs[3] = { SI5351_CLK0, SI5351_CLK1, SI5351_CLK2 };
 const si5351_drive drive_strengths[4] = { SI5351_DRIVE_2MA, SI5351_DRIVE_4MA, SI5351_DRIVE_6MA, SI5351_DRIVE_8MA };
 uint8_t page_buffer[EEPROM_24CW640_PAGE_SIZE];
-band_info band_table[MAX_BANDS];
+uint32_t landing_freqs[MAX_BANDS];
 
 // Class instantiations
 
@@ -396,13 +492,16 @@ bool VFO::set_freq (uint32_t freq)
     // Validate VFO frequency
 
     for(i = 0; i < MAX_BANDS; i++) {
-        if(freq < band_table[i].upper_edge){
+        if(!band_table[i].lower_edge) // If empty band table entry
+            continue;
+        if(freq < band_table[i].upper_edge){ // If freq falls in band
             if(freq > band_table[i].lower_edge){
                 break;
             }
         }
     }
-    if (i >= MAX_BANDS)
+    
+    if (i >= MAX_BANDS) // If no match in band table
         return false;
 
     vfo_freq = freq;
@@ -679,9 +778,9 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
             if(bi == MAX_BANDS)
                 bi = 0;
             // Save last used freq. on current band
-            band_table[band_index].landing =  vfo_freq;
+            landing_freqs[band_index] =  vfo_freq;
             // Set landing freq on new band/
-            set_freq(band_table[bi].landing);
+            set_freq(landing_freqs[bi]);
             sideband_set(MODE_DEFAULT); // Set default for band
             break;
 
@@ -944,75 +1043,10 @@ bool VFO::begin(uint32_t init_freq)
 
     #endif
 
-  
-
-    //
-    // Generate band table from the configuration information
-    //
-
-    #ifdef BAND_FILTER_1
-        band_table[0].band = BAND_FILTER_1;
-        band_table[0].lower_edge = BAND_EDGE_LOW_1;
-        band_table[0].landing = BAND_LANDING_1;
-        band_table[0].upper_edge = BAND_EDGE_HIGH_1;
-        band_table[0].usb_def = BAND_DEF_USB_1;
-    #endif
-
-    #ifdef BAND_FILTER_2
-        band_table[1].band = BAND_FILTER_2;
-        band_table[1].lower_edge = BAND_EDGE_LOW_2;
-        band_table[1].landing = BAND_LANDING_2;
-        band_table[1].upper_edge = BAND_EDGE_HIGH_2;
-        band_table[1].usb_def = BAND_DEF_USB_2;
-    #endif
-
-    #ifdef BAND_FILTER_3
-        band_table[2].band = BAND_FILTER_3;
-        band_table[2].lower_edge = BAND_EDGE_LOW_3;
-        band_table[2].landing = BAND_LANDING_3;
-        band_table[2].upper_edge = BAND_EDGE_HIGH_3;
-        band_table[2].usb_def = BAND_DEF_USB_3;
-    #endif
-
-    #ifdef BAND_FILTER_4
-        band_table[3].band = BAND_FILTER_4;
-        band_table[3].lower_edge = BAND_EDGE_LOW_4;
-        band_table[3].landing = BAND_LANDING_4;
-        band_table[3].upper_edge = BAND_EDGE_HIGH_4;
-        band_table[3].usb_def = BAND_DEF_USB_4;
-    #endif
-
-    #ifdef BAND_FILTER_5
-        band_table[4].band = BAND_FILTER_5;
-        band_table[4].lower_edge = BAND_EDGE_LOW_5;
-        band_table[4].landing = BAND_LANDING_5;
-        band_table[4].upper_edge = BAND_EDGE_HIGH_5;
-        band_table[4].usb_def = BAND_DEF_USB_5;
-    #endif
-
-    #ifdef BAND_FILTER_6
-        band_table[5].band = BAND_FILTER_6;
-        band_table[5].lower_edge = BAND_EDGE_LOW_6;
-        band_table[5].landing = BAND_LANDING_6;
-        band_table[5].upper_edge = BAND_EDGE_HIGH_6;
-        band_table[5].usb_def = BAND_DEF_USB_6;
-    #endif
-
-    #ifdef BAND_FILTER_7
-        band_table[6].band = BAND_FILTER_7;
-        band_table[6].lower_edge = BAND_EDGE_LOW_7;
-        band_table[6].landing = BAND_LANDING_7;
-        band_table[6].upper_edge = BAND_EDGE_HIGH_7;
-        band_table[6].usb_def = BAND_DEF_USB_7;
-    #endif
-
-    #ifdef BAND_FILTER_7
-        band_table[7].band = BAND_FILTER_8;
-        band_table[7].lower_edge = BAND_EDGE_LOW_8;
-        band_table[7].landing = BAND_LANDING_8;
-        band_table[7].upper_edge = BAND_EDGE_HIGH_8;
-        band_table[7].usb_def = BAND_DEF_USB_8;
-    #endif
+    // Initialize the band landing frequencies in ram
+    for(i = 0; i < MAX_BANDS; i++){
+        landing_freqs[i] = band_table[i].landing;
+    }
 
     // Initialize the band select 
     #ifndef VFO_MODULE_TEST_MODE
