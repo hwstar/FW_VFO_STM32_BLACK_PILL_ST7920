@@ -1,5 +1,6 @@
 #ifndef __KNOB_HPP__
 #define KM_TUNING 0 // Tuning mode
+#define KM_MENU 1 // Menu mode
 
 class KNOB {
 public:

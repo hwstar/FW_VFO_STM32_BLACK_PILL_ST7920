@@ -16,8 +16,94 @@
 #include <vfo.hpp>
 #include <cmdparse.hpp>
 #include <txprotect.hpp>
+#include <menu.hpp>
+
+//
+// Menu system
+//
 
 
+const menu_item sideband_lsb = {
+  "LSB",
+  MENU_ATYPE_COMMAND,
+  EVENT_VFO,
+  EV_SUBTYPE_SET_SIDEBAND,
+  {.u8_val=MODE_LSB},
+  NULL
+};
+
+const menu_item sideband_usb = {
+  "USB",
+  MENU_ATYPE_COMMAND,
+  EVENT_VFO,
+  EV_SUBTYPE_SET_SIDEBAND,
+  {.u8_val=MODE_USB},
+  NULL
+};
+
+const menu_level sideband_menu = {
+    2, // Number of selections
+   "LSB/USB", // Menu name
+   {&sideband_lsb, &sideband_usb, NULL, NULL} // Menu entries
+   
+ };
+
+const menu_item agc_on = {
+  "ON",
+  MENU_ATYPE_COMMAND,
+  EVENT_VFO,
+  EV_SUBTYPE_SET_AGC,
+  {.u8_val=1}, // Enable
+};
+
+const menu_item agc_off = {
+  "OFF",
+  MENU_ATYPE_COMMAND,
+  EVENT_VFO,
+  EV_SUBTYPE_SET_AGC,
+  {.u8_val=0}, // Disable
+  NULL
+};
+
+const menu_level agc_menu = {
+    2, // Number of selections
+   "AGC MENU", // Menu name
+   {&agc_on, &agc_off, NULL, NULL} // Menu entries
+ };
+ 
+const menu_item top_agc {
+  "AGC...", // Entry name
+  MENU_ATYPE_LEVEL_PUSH, // Type of entry
+  0, // Event type
+  0, // Event subtype
+  {0}, // Event data
+  &agc_menu // Lower menu level
+};
+
+const menu_item top_sideband = {
+  "Sideband...", // Entry name
+  MENU_ATYPE_LEVEL_PUSH, // Type of entry
+  0, 
+  0,
+  {0},
+  &sideband_menu // Lower menu level
+};
+ 
+
+ const menu_level top_menu = {
+   2, // Number of selections
+   "Main Menu", // Menu name
+   {&top_sideband,&top_agc,NULL,NULL} // Menu entries
+};
+
+ 
+
+
+
+
+//
+// Scheduler
+//
 
 
 // Scheduler object
@@ -30,6 +116,9 @@ void task_poll_hundred_ms();
 Task ms_task(1, -1, &task_poll_one_ms, &ts, true);
 Task hundred_ms_task(100, -1, &task_poll_hundred_ms, &ts, true);
 
+//
+// Objects
+//
 
 EVENT pubsub; // Event object
 // VFO object
@@ -50,6 +139,8 @@ CMDPARSE cmdparse;
 ERROR_HANDLER error;
 // Transmitter protection
 TX_PROTECT txprotect;
+// Menu system
+MENU menu;
 
 
 
@@ -139,6 +230,9 @@ void setup()
   encoder.begin(PIN_ENCODER_I, PIN_ENCODER_Q, PIN_ENCODER_SWITCH, [] () { encoder.interrupt_handler(); });
   // Initialize display 
   display.begin();
+  // Initialize menu
+  void command_handler(uint32_t command);
+  menu.begin(&top_menu);
 
   // Add subscribers to the event object
   void encoder_subscriber(event_data, uint32_t);

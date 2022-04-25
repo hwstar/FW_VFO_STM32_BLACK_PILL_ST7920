@@ -1,5 +1,6 @@
 #ifndef __SWITCHES_HPP__
 
+#define LONG_PRESS_TIME 200 // 2 Seconds defines a long press
 
 class SWITCHES
 {
@@ -13,6 +14,7 @@ class SWITCHES
    
     private:
     uint8_t time_slot;
+    uint16_t encoder_knob_down_timer;
 
 };
 

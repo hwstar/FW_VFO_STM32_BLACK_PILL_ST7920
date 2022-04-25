@@ -8,6 +8,7 @@
 
 
 #define DISPLAY_NORMAL 0
+#define DISPLAY_MENU  10
 #define DISPLAY_ERROR 100
 
 #define VALID_STR(s) (s && s[0])
@@ -458,6 +459,29 @@ void DISPLAY_DRIVER::refresh_error_message()
     for(;;); // Loop forever on hard error
 }
 
+
+/*
+* Display menu message
+*/
+void DISPLAY_DRIVER::refresh_menu_message()
+{
+ 
+  st7920.firstPage();
+  do {
+      uint8_t i,y;
+      /* all graphics commands have to appear within the loop body. */    
+      st7920.setFont(u8g2_font_ncenB14_tr);
+      st7920.drawStr(0, 20, p_menu_info->menu_name);
+      st7920.setFont(u8g2_font_ncenB08_tr);
+      for(i = 0; i < p_menu_info->item_count; i++){
+        y = 30+(i*10);
+        if(i == p_menu_info->selection) // If current menu item matches selection
+          st7920.drawStr(0, y, ">");
+        st7920.drawStr(10, y, p_menu_info->items[i]);
+      }
+  } while ( st7920.nextPage() );
+}
+
 void DISPLAY_DRIVER::refresh()
 {
   switch(display_mode){
@@ -467,6 +491,10 @@ void DISPLAY_DRIVER::refresh()
 
     case DISPLAY_ERROR:
       refresh_error_message();
+      break;
+
+    case DISPLAY_MENU:
+      refresh_menu_message();
       break;
 
     default:
@@ -485,30 +513,45 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
         case EV_SUBTYPE_SET_FREQ:
             freq = ed.u32_val;
             break;
+
         case EV_SUBTYPE_TRX_MODE:
             trx_mode = ed.u8_val;
             break;
+
         case EV_SUBTYPE_SET_SIDEBAND:
             sideband = ed.u8_val;
             break;
+
         case EV_SUBTYPE_SET_AGC:
             agc_state = ed.u8_val;
             break;
+
         case EV_SUBTYPE_KEYPAD_ENTRY:
             keypad_keys = ed.cp;
             break;
+
         case EV_SUBTYPE_UPDATE_VFO_B_FREQ:
             freq_b = ed.u32_val;
             break;
-        case EV_SUBTYPE_POST_ERROR:
-            break;
+
         case EV_SUBTYPE_TICK_HUNDRED_MS:
             this->refresh(); 
             break;
+
         case EV_SUBTYPE_DISPLAY_ERROR:
             p_err_info = (ed_error_info *) ed.vp;
             display_mode = DISPLAY_ERROR;
             break;
+
+        case EV_SUBTYPE_DISPLAY_MENU:
+            p_menu_info = (ed_menu_info *) ed.vp;
+            display_mode = DISPLAY_MENU;
+            break;
+
+        case EV_SUBTYPE_DISPLAY_NORMAL:
+            display_mode = DISPLAY_NORMAL;
+            break;
+
         case EV_SUBTYPE_SET_TUNING_INCREMENT:
             tuning_increment = ed.u16_val;
             break;

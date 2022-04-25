@@ -16,9 +16,11 @@ class DISPLAY_DRIVER
     char *blank_field(char *dest, uint8_t max_length);
     void refresh_normal_operation();
     void refresh_error_message();
+    void refresh_menu_message();
 
 
     ed_error_info *p_err_info;
+    ed_menu_info *p_menu_info;
     ed_meter_info meter_info;
     uint32_t freq;
     uint32_t freq_b;

@@ -34,7 +34,7 @@
 #define EV_SUBTYPE_TUNE_CW 11
 #define EV_SUBTYPE_TUNE_CCW 12
 #define EV_SUBTYPE_KEYPAD_ENTRY 13
-#define EV_SUBTYPE_POST_ERROR 14
+#define EV_SUBTYPE_DISPLAY_NORMAL 14
 #define EV_SUBTYPE_TICK_MS 15
 #define EV_SUBTYPE_TICK_HUNDRED_MS 16
 #define EV_SUBTYPE_ENCODER_CW 17
@@ -47,6 +47,8 @@
 #define EV_SUBTYPE_UPDATE_VFO_B_FREQ 24
 #define EV_SUBTYPE_METER_UPDATE 25
 #define EV_SUBTYPE_ADVANCE_BAND 26
+#define EV_SUBTYPE_ENCODER_RELEASED_LONG 27
+#define EV_SUBTYPE_DISPLAY_MENU 28
 
 
 
@@ -109,6 +111,14 @@ typedef struct ed_meter_info {
     float full_scale;
     const char *legend;
 } ed_meter_info;
+
+typedef struct ed_menu_info {
+    uint8_t selection;
+    uint8_t item_count;
+    const char *menu_name;
+    const char *items[MAX_MENU_ITEMS];
+} ed_menu_info;
+
 
 #define ERROR_MAX_LINE_LENGTH 30
 typedef struct ed_error_info {

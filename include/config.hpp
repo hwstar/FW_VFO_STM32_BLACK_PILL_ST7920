@@ -303,6 +303,10 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define RADIO_TX 1
 #define RADIO_TUNE 2
 
+// Max number of menu items
+#define MAX_MENU_ITEMS 4
+// Max number of menu levels
+#define MAX_MENU_LEVELS 2
 
 #define __CONFIG_HPP__
 
