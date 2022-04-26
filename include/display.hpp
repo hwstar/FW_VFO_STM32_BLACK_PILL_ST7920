@@ -17,10 +17,12 @@ class DISPLAY_DRIVER
     void refresh_normal_operation();
     void refresh_error_message();
     void refresh_menu_message();
+    void refresh_u16_cal_message();
 
 
     ed_error_info *p_err_info;
     ed_menu_info *p_menu_info;
+    ed_cal_menu_info_u16 *p_cal_menu_info_u16;
     ed_meter_info meter_info;
     uint32_t freq;
     uint32_t freq_b;

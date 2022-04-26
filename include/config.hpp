@@ -88,6 +88,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 1
 #define BAND_FILTER_1       BAND_160M
+#define BAND_NAME_1         "160M"
 #define BAND_EDGE_LOW_1     1800000UL // Values are in Hz.
 #define BAND_LANDING_1      1900000UL
 #define BAND_EDGE_HIGH_1    2000000UL
@@ -95,6 +96,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 2
 #define BAND_FILTER_2       BAND_80M
+#define BAND_NAME_2         "80M"
 #define BAND_EDGE_LOW_2     3500000UL
 #define BAND_LANDING_2      3900000UL
 #define BAND_EDGE_HIGH_2    4000000UL
@@ -102,6 +104,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 3
 #define BAND_FILTER_3       BAND_40M
+#define BAND_NAME_3         "40M"
 #define BAND_EDGE_LOW_3     7000000UL
 #define BAND_LANDING_3      7200000UL
 #define BAND_EDGE_HIGH_3    7300000UL
@@ -109,6 +112,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 4
 #define BAND_FILTER_4       BAND_20M
+#define BAND_NAME_4         "20M"
 #define BAND_EDGE_LOW_4     14000000UL
 #define BAND_LANDING_4      14250000UL
 #define BAND_EDGE_HIGH_4    14350000UL
@@ -116,6 +120,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 5
 #define BAND_FILTER_5       BAND_17M
+#define BAND_NAME_5         "17M"
 #define BAND_EDGE_LOW_5     18068000UL
 #define BAND_LANDING_5      18130000UL
 #define BAND_EDGE_HIGH_5    18168000UL
@@ -123,6 +128,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 6
 #define BAND_FILTER_6       BAND_15M
+#define BAND_NAME_6         "15M"
 #define BAND_EDGE_LOW_6     21000000UL
 #define BAND_LANDING_6      21250000UL
 #define BAND_EDGE_HIGH_6    21450000UL
@@ -130,6 +136,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 7
 #define BAND_FILTER_7       BAND_12M
+#define BAND_NAME_7         "12M"
 #define BAND_EDGE_LOW_7     24890000UL
 #define BAND_LANDING_7      24970000UL
 #define BAND_EDGE_HIGH_7    24990000UL 
@@ -137,6 +144,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 // Band 8
 #define BAND_FILTER_8       BAND_10M
+#define BAND_NAME_8         "10M"
 #define BAND_EDGE_LOW_8     28000000UL
 #define BAND_LANDING_8      28300000UL
 #define BAND_EDGE_HIGH_8    30000000UL
@@ -306,7 +314,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 // Max number of menu items
 #define MAX_MENU_ITEMS 4
 // Max number of menu levels
-#define MAX_MENU_LEVELS 2
+#define MAX_MENU_LEVELS 3
 
 #define __CONFIG_HPP__
 

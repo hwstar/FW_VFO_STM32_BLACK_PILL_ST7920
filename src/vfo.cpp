@@ -45,6 +45,7 @@
 
 typedef struct band_info {
     BANDS band;
+    const char *band_name;
     uint32_t lower_edge;
     uint32_t landing;
     uint32_t upper_edge;
@@ -60,6 +61,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_1
     {
     BAND_FILTER_1,
+    BAND_NAME_1,
     BAND_EDGE_LOW_1,
     BAND_LANDING_1,
     BAND_EDGE_HIGH_1,
@@ -72,6 +74,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_2
     {
     BAND_FILTER_2,
+    BAND_NAME_2,
     BAND_EDGE_LOW_2,
     BAND_LANDING_2,
     BAND_EDGE_HIGH_2,
@@ -83,6 +86,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_3
     {
     BAND_FILTER_3,
+    BAND_NAME_3,
     BAND_EDGE_LOW_3,
     BAND_LANDING_3,
     BAND_EDGE_HIGH_3,
@@ -94,6 +98,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_4
     {
     BAND_FILTER_4,
+    BAND_NAME_4,
     BAND_EDGE_LOW_4,
     BAND_LANDING_4,
     BAND_EDGE_HIGH_4,
@@ -105,6 +110,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_5
     {
     BAND_FILTER_5,
+    BAND_NAME_5,
     BAND_EDGE_LOW_5,
     BAND_LANDING_5,
     BAND_EDGE_HIGH_5,
@@ -116,6 +122,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_6
     {
     BAND_FILTER_6,
+    BAND_NAME_6,
     BAND_EDGE_LOW_6,
     BAND_LANDING_6,
     BAND_EDGE_HIGH_6,
@@ -127,6 +134,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_7
     {
     BAND_FILTER_7,
+    BAND_NAME_7,
     BAND_EDGE_LOW_7,
     BAND_LANDING_7,
     BAND_EDGE_HIGH_7,
@@ -138,6 +146,7 @@ static const band_info band_table[MAX_BANDS] = {
 #ifdef BAND_FILTER_8
     {
     BAND_FILTER_8,
+    BAND_NAME_8,
     BAND_EDGE_LOW_8,
     BAND_LANDING_8,
     BAND_EDGE_HIGH_8,
@@ -339,12 +348,33 @@ void VFO::update_display_tx(uint8_t mode)
 }
 
 //
+// Get band
+//
+const char *VFO::get_band()
+{
+    const char *res;
+
+    res = band_table[band_index].band_name;
+      
+    return res;
+}
+
+//
 // Get current vfo frequency
 //
 
 uint32_t VFO::get_freq()
 {
     return vfo_freq;
+}
+
+//
+// Return current TX gain value for the current band
+//
+
+uint16_t VFO::get_txgain()
+{
+    return trx_gain_info.tx_gain_values[band_index];
 }
 
 //

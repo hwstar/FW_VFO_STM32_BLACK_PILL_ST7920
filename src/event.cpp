@@ -107,6 +107,18 @@ void EVENT::fire(uint32_t event_type, uint32_t event_subtype, uint32_t value)
 }
 
 //
+// Fire an event with a 16 bit unsigned value
+//
+
+void EVENT::fire(uint32_t event_type, uint32_t event_subtype, uint16_t value)
+{
+    event_data ed;
+    ed.u16_val = value;
+    fire(event_type, event_subtype, ed);
+
+}
+
+//
 // Generic fire function
 //
 

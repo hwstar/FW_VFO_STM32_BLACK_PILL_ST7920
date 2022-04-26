@@ -9,6 +9,7 @@
 
 #define DISPLAY_NORMAL 0
 #define DISPLAY_MENU  10
+#define DISPLAY_CAL_VALUE 11
 #define DISPLAY_ERROR 100
 
 #define VALID_STR(s) (s && s[0])
@@ -482,6 +483,35 @@ void DISPLAY_DRIVER::refresh_menu_message()
   } while ( st7920.nextPage() );
 }
 
+/*
+* Display menu message
+*/
+void DISPLAY_DRIVER::refresh_u16_cal_message()
+{
+  char str[6];
+  char incr_str[6];
+  snprintf(str, 5, "%d", p_cal_menu_info_u16->value);
+  str[5] = 0;
+  snprintf(incr_str, 5, "%d", p_cal_menu_info_u16->increment);
+  incr_str[5] = 0;
+ 
+  st7920.firstPage();
+  do {
+      /* all graphics commands have to appear within the loop body. */    
+      st7920.setFont(u8g2_font_ncenB14_tr);
+      st7920.drawStr(0, 20, p_cal_menu_info_u16->name);
+     
+      st7920.setFont(u8g2_font_ncenB08_tr);   
+      st7920.drawStr(10, 40, str);
+      if(VALID_STR(p_cal_menu_info_u16->extra_info)){
+        st7920.drawStr(60, 40, p_cal_menu_info_u16->extra_info);
+      }
+      st7920.drawStr(90, 40, incr_str);
+      
+  } while ( st7920.nextPage() );
+}
+
+
 void DISPLAY_DRIVER::refresh()
 {
   switch(display_mode){
@@ -495,6 +525,10 @@ void DISPLAY_DRIVER::refresh()
 
     case DISPLAY_MENU:
       refresh_menu_message();
+      break;
+
+    case DISPLAY_CAL_VALUE:
+      refresh_u16_cal_message();
       break;
 
     default:
@@ -546,6 +580,11 @@ void DISPLAY_DRIVER::events(event_data ed, uint32_t event_subtype)
         case EV_SUBTYPE_DISPLAY_MENU:
             p_menu_info = (ed_menu_info *) ed.vp;
             display_mode = DISPLAY_MENU;
+            break;
+
+        case EV_SUBTYPE_DISPLAY_CAL_VALUE:
+            p_cal_menu_info_u16 = (ed_cal_menu_info_u16 *) ed.vp;
+            display_mode = DISPLAY_CAL_VALUE;
             break;
 
         case EV_SUBTYPE_DISPLAY_NORMAL:

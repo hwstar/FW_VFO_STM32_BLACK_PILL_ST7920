@@ -23,14 +23,19 @@
 //
 
 
+// LSB menu item
+
 const menu_item sideband_lsb = {
   "LSB",
   MENU_ATYPE_COMMAND,
   EVENT_VFO,
   EV_SUBTYPE_SET_SIDEBAND,
   {.u8_val=MODE_LSB},
+  NULL,
   NULL
 };
+
+// USB menu item
 
 const menu_item sideband_usb = {
   "USB",
@@ -38,8 +43,11 @@ const menu_item sideband_usb = {
   EVENT_VFO,
   EV_SUBTYPE_SET_SIDEBAND,
   {.u8_val=MODE_USB},
+  NULL,
   NULL
 };
+
+// Sideband menu
 
 const menu_level sideband_menu = {
     2, // Number of selections
@@ -48,13 +56,19 @@ const menu_level sideband_menu = {
    
  };
 
+// AGC on menu item
+
 const menu_item agc_on = {
   "ON",
   MENU_ATYPE_COMMAND,
   EVENT_VFO,
   EV_SUBTYPE_SET_AGC,
   {.u8_val=1}, // Enable
+  NULL,
+  NULL
 };
+
+// AGC off menu item
 
 const menu_item agc_off = {
   "OFF",
@@ -62,23 +76,61 @@ const menu_item agc_off = {
   EVENT_VFO,
   EV_SUBTYPE_SET_AGC,
   {.u8_val=0}, // Disable
+  NULL,
   NULL
 };
+
+// AGC on/off menu
 
 const menu_level agc_menu = {
     2, // Number of selections
    "AGC MENU", // Menu name
    {&agc_on, &agc_off, NULL, NULL} // Menu entries
  };
- 
+
+ // TX gain calibrator
+void main_tx_gain_action(menu_action_data *act_data);
+ const menu_cal_item_u16 adjust_tx_gain = {
+   "TX_GAIN",
+   500,
+   4095,
+   main_tx_gain_action
+ };
+
+ // TX gain calibration menu item
+
+ const menu_item cal_tx_gain = {
+  "TX GAIN",
+  MENU_ATYPE_CAL_U16,
+  EVENT_VFO,
+  EV_SUBTYPE_SET_AGC,
+  {0},
+  NULL,
+  &adjust_tx_gain
+};
+
+ // Calibration menu
+
+ const menu_level cal_menu = {
+    1, // Number of selections
+   "CALIB", // Menu name
+   {&cal_tx_gain, NULL, NULL, NULL} // Menu entries
+ };
+
+
+// AGC menu selection
+
 const menu_item top_agc {
   "AGC...", // Entry name
   MENU_ATYPE_LEVEL_PUSH, // Type of entry
   0, // Event type
   0, // Event subtype
   {0}, // Event data
-  &agc_menu // Lower menu level
+  &agc_menu,// Lower menu level
+  NULL
 };
+
+// Sideband menu selection
 
 const menu_item top_sideband = {
   "Sideband...", // Entry name
@@ -86,14 +138,28 @@ const menu_item top_sideband = {
   0, 
   0,
   {0},
-  &sideband_menu // Lower menu level
+  &sideband_menu, // Lower menu level
+  NULL
+};
+
+// Calibration menu selection
+
+const menu_item top_cal = {
+  "Calib...", // Entry name
+  MENU_ATYPE_LEVEL_PUSH, // Type of entry
+  0, 
+  0,
+  {0},
+  &cal_menu, // Lower menu level
+  NULL
 };
  
+ // Top level menu
 
  const menu_level top_menu = {
-   2, // Number of selections
+   3, // Number of selections
    "Main Menu", // Menu name
-   {&top_sideband,&top_agc,NULL,NULL} // Menu entries
+   {&top_sideband,&top_agc,&top_cal,NULL} // Menu entries
 };
 
  
@@ -404,6 +470,26 @@ void task_poll_hundred_ms()
 }
 
  
+//
+// Action function for TX gain
+//
+
+void main_tx_gain_action(menu_action_data *act_data){
+
+  
+  if(act_data->command == MENU_CAL_RETRIEVE){
+    act_data->value = vfo.get_txgain();
+    // If str_param is not null, copy the band name to the parameter provided using value as the length
+    act_data->const_str = vfo.get_band();
+
+  }
+  else if(act_data->command == MENU_CAL_STORE){
+    pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_TXGAIN, act_data->value);
+  }
+
+}
+
+
  void loop()
  {
    ts.execute();

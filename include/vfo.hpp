@@ -109,6 +109,8 @@ class VFO
     
     bool begin(uint32_t init_freq = 14250000UL);
     uint32_t get_freq(); 
+    const char *get_band();
+    uint16_t get_txgain();
     uint8_t ptt_get();
     uint8_t mode_get();
     uint32_t incr_get(); 

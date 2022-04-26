@@ -49,6 +49,7 @@
 #define EV_SUBTYPE_ADVANCE_BAND 26
 #define EV_SUBTYPE_ENCODER_RELEASED_LONG 27
 #define EV_SUBTYPE_DISPLAY_MENU 28
+#define EV_SUBTYPE_DISPLAY_CAL_VALUE 29
 
 
 
@@ -119,6 +120,13 @@ typedef struct ed_menu_info {
     const char *items[MAX_MENU_ITEMS];
 } ed_menu_info;
 
+typedef struct ed_cal_menu_info_u16 {
+    const char *name;
+    char *extra_info;
+    uint16_t value;
+    uint16_t increment;
+} ed_cal_menu_info;
+
 
 #define ERROR_MAX_LINE_LENGTH 30
 typedef struct ed_error_info {
@@ -136,6 +144,7 @@ class EVENT
     void fire(uint32_t event_type, uint32_t event_subtype, uint8_t value);
     void fire(uint32_t event_type, uint32_t event_subtype, char value);
     void fire(uint32_t event_type, uint32_t event_subtype, uint32_t value);
+    void fire(uint32_t event_type, uint32_t event_subtype, uint16_t value);
     void fire(uint32_t event_type, uint32_t event_subtype, event_data ed);
     void fire(uint32_t event_type, uint32_t event_subtype);
     void fire(uint32_t event_type, uint32_t event_subtype, char *value);
