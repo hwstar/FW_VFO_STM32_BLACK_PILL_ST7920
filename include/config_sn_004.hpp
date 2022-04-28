@@ -1,4 +1,7 @@
 #ifndef __CONFIG_HPP__
+/**********************
+* Config for lefty Jr.
+**********************/
 
 //
 // Black Pill pins used
@@ -45,8 +48,8 @@
 #define PIN_TEST_OUTPUT PA3
 
 // ADC inputs
-#define S_METER_ADC PA0 // Define ADC pin for S Meter if it is going to be used
-//#define VMON_ADC PA4    // Define ADC pin for Voltage Monitor if it is going to be used.
+//#define S_METER_ADC PA0 // Define ADC pin for S Meter if it is going to be used
+#define VMON_ADC PA4    // Define ADC pin for Voltage Monitor if it is going to be used.
 
 //
 
@@ -201,8 +204,8 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 #define SYSTEM_NAME  "LEFTY TRX" // Name for all of the boards comprising a transceiver
 #define TRX_BOARD_NAME "TRXC2" // Transceiver board name
-#define TRX_SER_NUM "0003"
-#define VFO_SER_NUM "0001"
+#define TRX_SER_NUM "0002"
+#define VFO_SER_NUM "0003"
 
 //
 // First IF intiialization values
@@ -226,8 +229,8 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define VFO_BOARD_NAME "VFOC2" // Board name for concept 2 VFO with on-board eeprom
 #define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
 #define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
-#define SECOND_IF_UPPER_M6DB 12287564 // Second IF upper -6dB point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12285077 // Second IF lower -6dB point crystal filter passband
+#define SECOND_IF_UPPER_M6DB 12287533 // Second IF upper -6dB point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12284967 // Second IF lower -6dB point crystal filter passband
 
 
 
@@ -291,7 +294,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 //
 
 #ifdef VMON_ADC
-#define VMON_ADC_CAL_FACTOR 1.0
+#define VMON_ADC_CAL_FACTOR 1003.0 // Adjust to calibrate the front panel volt meter. 1000mV/V is the nominal value
 #endif 
 
 /*
@@ -311,12 +314,13 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define RADIO_TX 1
 #define RADIO_TUNE 2
 
-// Max number of menu items
 #define MAX_MENU_ITEMS 4
-// Max number of menu levels
 #define MAX_MENU_LEVELS 3
 
+
+
 #define __CONFIG_HPP__
+
 
 #endif
 

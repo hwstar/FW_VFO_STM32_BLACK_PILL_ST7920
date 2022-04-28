@@ -583,11 +583,13 @@ void VFO::service_metering(event_data ed)
         // Read vmon pin
         vmon_adc_reading = analogRead(VMON_ADC);
         // Calibration adjustment
-        x = round(VMON_ADC_CAL_FACTOR * vmon_adc_reading);
+        x = vmon_adc_reading;
         // Multiply by ADC volts per count
-        x = round(x * 0.000805);
-        // Scale to account for the voltage divider and to convert to millivolts
-        x *= 5000.0;
+        x *= 0.000805;
+        // Scale to account for the voltage divider 
+        x *= 5;
+        // Convert to millivolts
+        x *= VMON_ADC_CAL_FACTOR;
         // Average 10 readings
         x = ((((9.0 * vmon_value)) + x) / 10.0);
         // Update result

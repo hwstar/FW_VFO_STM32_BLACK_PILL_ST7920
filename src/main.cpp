@@ -249,10 +249,15 @@ void setup()
   pinMode(PIN_KEYPAD_C3, OUTPUT);
   pinMode(PIN_KEYPAD_C4, OUTPUT);
 
+  analogReadResolution(12);
+
   #ifdef S_METER_ADC
   // ADC setup
-  analogReadResolution(12);
   analogRead(S_METER_ADC);
+  #endif
+
+  #ifdef VMON_ADC
+  analogRead(VMON_ADC);
   #endif
 
 
