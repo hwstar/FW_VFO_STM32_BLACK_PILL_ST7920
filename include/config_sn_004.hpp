@@ -48,7 +48,7 @@
 #define PIN_TEST_OUTPUT PA3
 
 // ADC inputs
-//#define S_METER_ADC PA0 // Define ADC pin for S Meter if it is going to be used
+#define S_METER_ADC PA0 // Define ADC pin for S Meter if it is going to be used
 #define VMON_ADC PA4    // Define ADC pin for Voltage Monitor if it is going to be used.
 
 //
@@ -178,6 +178,13 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 //#define VFO_MODULE_TEST_MODE
 
+
+//
+// TRX Module test mode skips checking for the LPF and BPF boards in the system when testing the VFO and TRX standalone
+//
+
+//#define TRX_MODULE_TEST_MODE
+
 //
 // Show VFO calibration info on display (Currently limited to SMETER ADC values, and TX power)
 //
@@ -228,9 +235,9 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 #define VFO_BOARD_NAME "VFOC2" // Board name for concept 2 VFO with on-board eeprom
 #define REF_TCXO_FREQ_HZ 26000000 // 26 MHz for the quad output SI5351 VFO board
-#define CLK_SOURCE_CAL_VALUE -395  // VFO clock calibration value for Quad output VFO board
-#define SECOND_IF_UPPER_M6DB 12287533 // Second IF upper -6dB point crystal filter passband
-#define SECOND_IF_LOWER_M6DB 12284967 // Second IF lower -6dB point crystal filter passband
+#define CLK_SOURCE_CAL_VALUE -200  // VFO clock calibration value for Quad output VFO board
+#define SECOND_IF_UPPER_M6DB 12287562 // Second IF upper -6dB point crystal filter passband
+#define SECOND_IF_LOWER_M6DB 12285100 // Second IF lower -6dB point crystal filter passband
 
 
 

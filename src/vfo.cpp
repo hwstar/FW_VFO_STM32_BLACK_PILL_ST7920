@@ -942,7 +942,7 @@ bool VFO::begin(uint32_t init_freq)
             vfo_eeprom_invalid = true;
         if(!eeprom.verify_header(RECNUM_EEPROM_VFO_CAL, RECNAME_VFOCAL, &vfo_cal_info))
             vfo_eeprom_invalid = true;
-        if(!eeprom.verify_header(RECNUM_BASE_EEPROM_VFO_CHANNEL, RECNAME_CHANNEL, &vfo_cal_info))
+        if(!eeprom.verify_header(RECNUM_BASE_EEPROM_VFO_CHANNEL, RECNAME_CHANNEL, &vfo_channel_info))
             vfo_eeprom_invalid = true;
     }
     SEL_I2C_BUS_EXT;

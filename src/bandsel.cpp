@@ -15,6 +15,7 @@
         lpf = p_lpf;
         bool res = true;
     
+        #ifndef TRX_MODULE_TEST_MODE
         
         if(!lpf->present()){
             res = false;
@@ -35,6 +36,7 @@
         bpf->write(0x00);
         bpf->set_gpio_config(0x00);
         bpf->write(p_init_band);
+        #endif
 
         return res;
  
@@ -42,6 +44,8 @@
 
     void BANDSEL::set(BANDS new_band)
     {
+        #ifndef TRX_MODULE_TEST_MODE
         bpf->write(new_band);
         lpf->write(new_band);
+        #endif
     }
