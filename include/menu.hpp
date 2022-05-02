@@ -5,7 +5,7 @@
 #define MENU_ATYPE_CAL_U16 2
 
 #define MENU_CAL_RETRIEVE 0
-#define MENU_CAL_STORE 1
+#define MENU_CAL_SET 1
 
 #define MENU_CS_IDLE 0
 #define MENU_CS_ACTIVE 1

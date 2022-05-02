@@ -159,7 +159,7 @@ class VFO
     void ptt_set(uint8_t mode);
     void sideband_set(uint8_t mode);
     void set_tx_gain(uint16_t gain);
-    void store_tx_gain();
+    void commit_tx_gain();
     void display_tuning_increment(uint32_t value);
     void initialize_eeprom();
     void service_metering(event_data ed);

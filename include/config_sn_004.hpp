@@ -241,7 +241,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 
 
-// Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
+// Below are the gain constants needed to get 15W out of the final using the TRX tune oscillator leval adjustment pot
 // R1713 set to 3.5V p-p at TP1701. These constants are used to flatten out the TX power across all bands
 // from the TRX motherboard through the low pass filter bank, the power amplifier, and the low pass filter bank.
 // If any of these boards are swapped or re-ajusted, these gain settings will need to be updated.
@@ -255,32 +255,33 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 
 
-#define TRX_TXGAIN_160M 1450
-#define TRX_TXGAIN_80M 1435
-#define TRX_TXGAIN_40M 1485
-#define TRX_TXGAIN_20M 1525
-#define TRX_TXGAIN_17M 1540
-#define TRX_TXGAIN_15M 1510
-#define TRX_TXGAIN_12M 1560
-#define TRX_TXGAIN_10M 1640
+#define TRX_TXGAIN_160M 1750
+#define TRX_TXGAIN_80M 1515
+#define TRX_TXGAIN_40M 1511
+#define TRX_TXGAIN_20M 1527
+#define TRX_TXGAIN_17M 1530
+#define TRX_TXGAIN_15M 1530
+#define TRX_TXGAIN_12M 1570
+#define TRX_TXGAIN_10M 1600
 
 
 // S Meter Calibration
 // These constants map ADC counts to S-Units
 // Constants are with respect to first enclosed radio.
 // These are stored in the TRX eeprom
+// Calibrated on 7.200 MHz
 
 
-#define S_UNIT_2    1355 // -115 dBm
-#define S_UNIT_3    1330 // -109 dBm
-#define S_UNIT_4    1315 // -103 dBm
-#define S_UNIT_5    1280 // -97 dBm
-#define S_UNIT_6    1206 // -91 dBm
-#define S_UNIT_7    1075 // -85 dBm
-#define S_UNIT_8    885  // -79 dBm
-#define S_UNIT_9    698  // -73 dBm
-#define S_UNIT_10   530  // -63 dBm
-#define S_UNIT_20   470  // -53 dBm
+#define S_UNIT_2    1359 // -115 dBm
+#define S_UNIT_3    1352 // -109 dBm
+#define S_UNIT_4    1339 // -103 dBm
+#define S_UNIT_5    1302 // -97 dBm
+#define S_UNIT_6    1230 // -91 dBm
+#define S_UNIT_7    1102 // -85 dBm
+#define S_UNIT_8    908  // -79 dBm
+#define S_UNIT_9    713  // -73 dBm
+#define S_UNIT_10   548  // -63 dBm
+#define S_UNIT_20   492  // -53 dBm
 
 
 // Relative TX power for adc forward power measurement
@@ -301,7 +302,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 //
 
 #ifdef VMON_ADC
-#define VMON_ADC_CAL_FACTOR 1003.0 // Adjust to calibrate the front panel volt meter. 1000mV/V is the nominal value
+#define VMON_ADC_CAL_FACTOR 1005.0 // Adjust to calibrate the front panel volt meter. 1000mV/V is the nominal value
 #endif 
 
 /*

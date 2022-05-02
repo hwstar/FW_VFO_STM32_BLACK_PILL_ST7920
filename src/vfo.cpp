@@ -232,7 +232,7 @@ static const trx_eeprom_smeter_info trx_eeprom_smeter_init = {
 };
 
 static const trx_eeprom_txpower_info trx_eeprom_txpower_init = {
-    RECNAME_SMETER, // Record name
+    RECNAME_TXPOWER, // Record name
     { //ADC to S-UNIT map
         TX_POWER_LEVEL_1,
         TX_POWER_LEVEL_2,
@@ -455,21 +455,23 @@ void VFO::agc_set(uint8_t state)
 
 //
 // Set tx gain for calibration purposes
+// Save setting in volatile RAM
 //
 
 void VFO::set_tx_gain(uint16_t gain)
 {
 
     trx_dac.write_fast(gain);
-    trx_gain_info.tx_gain_values[band_index];
-}
+    trx_gain_info.tx_gain_values[band_index] = gain;
+}    
 
 //
-// Store current TX gain for a given band
+// Commit current TX gain settings to NVRAM
 //
 
-void VFO::store_tx_gain()
+void VFO::commit_tx_gain()
 {
+    eeprom.write_page(RECNUM_EEPROM_TXGAIN, &trx_gain_info);
     return;
 }
 
@@ -688,12 +690,18 @@ void VFO::service_metering(event_data ed)
                 case 2:
                     swr_adc.read(swr_reverse_voltage);
                     metering_tx_state++;
-                    break; // DEBUG
+                    break; 
 
                 case 3:
-                    
                     // Calculate SWR
                     if(last_ptt_mode == RADIO_TUNE){
+                        if(swr_reverse_voltage == 0 || swr_forward_voltage == 0){
+                        // TODO: investigate why the SWR ADC is returning 0's on 12M and 10M occasionally
+                        swr_adc.select_channel(0);
+                        metering_tx_state = 1;
+                        break;
+                        }
+                    
                         minfo.mode = EVMM_SWR;
                         swr_gamma = ((float) swr_reverse_voltage)/((float) swr_forward_voltage);
                         swr = (1.0 + abs(swr_gamma))/(1.0 - abs(swr_gamma));
@@ -771,8 +779,8 @@ void VFO::subscriber(event_data ed, uint32_t event_subtype )
         case EV_SUBTYPE_SET_TXGAIN:
             set_tx_gain(ed.u16_val);
             break;
-        case EV_SUBTYPE_STORE_TXGAIN:
-            store_tx_gain();
+        case EV_SUBTYPE_COMMIT_TXGAIN:
+            commit_tx_gain();
             break;
         case EV_SUBTYPE_SET_SIDEBAND:
             sideband_set(ed.u8_val);
@@ -997,7 +1005,6 @@ bool VFO::begin(uint32_t init_freq)
         trx_gain_info = trx_eeprom_txgain_init;
         trx_smeter_info = trx_eeprom_smeter_init;
         trx_txpower_info = trx_eeprom_txpower_init;
-
         trx_if_info = trx_eeprom_if_init;
         // If we have the trx EEPROM, initialize it here
         if(have_trx_eeprom){

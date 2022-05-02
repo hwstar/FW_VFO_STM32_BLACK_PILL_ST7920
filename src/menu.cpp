@@ -152,14 +152,14 @@ bool MENU::handler(event_data ed, uint32_t event_subtype)
                 //clip to minimum
                 if(cur_cal_value < cur_cal_item->min){
                     cur_cal_value = cur_cal_item->min;
-                    act_data.command = MENU_CAL_STORE;
+                    act_data.command = MENU_CAL_SET;
                     act_data.value = cur_cal_value;
                     cur_cal_item->action_function(&act_data);
                 }   
                 // clip to maximum
                 else if (cur_cal_value > cur_cal_item->max){
                     cur_cal_value = cur_cal_item->max;
-                    act_data.command = MENU_CAL_STORE;
+                    act_data.command = MENU_CAL_SET;
                     act_data.value = cur_cal_value;
                     cur_cal_item->action_function(&act_data);
                 }
@@ -194,7 +194,7 @@ bool MENU::handler(event_data ed, uint32_t event_subtype)
         else {
             uint16_t new_val = cal_increment + cur_cal_value;
             cur_cal_value = (new_val > cur_cal_item->max) ? cur_cal_item->max : new_val;
-            act_data.command = MENU_CAL_STORE;
+            act_data.command = MENU_CAL_SET;
             act_data.value = cur_cal_value;
             cur_cal_item->action_function(&act_data);
             draw(MENU_ATYPE_CAL_U16);
@@ -213,7 +213,7 @@ bool MENU::handler(event_data ed, uint32_t event_subtype)
         else {
             int32_t new_val = ((int32_t) cur_cal_value) - cal_increment;
             cur_cal_value =(new_val < cur_cal_item->min) ? cur_cal_item->min : (uint16_t) new_val;
-            act_data.command = MENU_CAL_STORE;
+            act_data.command = MENU_CAL_SET;
             act_data.value = cur_cal_value;
             cur_cal_item->action_function(&act_data);
             draw(MENU_ATYPE_CAL_U16);
