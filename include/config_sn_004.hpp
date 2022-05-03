@@ -323,7 +323,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 #define RADIO_TUNE 2
 
 #define MAX_MENU_ITEMS 4
-#define MAX_MENU_LEVELS 3
+#define MAX_MENU_LEVELS 4
 
 
 
