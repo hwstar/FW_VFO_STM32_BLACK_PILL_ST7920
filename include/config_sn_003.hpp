@@ -178,6 +178,13 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 //#define VFO_MODULE_TEST_MODE
 
+
+//
+// TRX Module test mode skips checking for the LPF and BPF boards in the system when testing the VFO and TRX standalone
+//
+
+//#define TRX_MODULE_TEST_MODE
+
 //
 // Show VFO calibration info on display (Currently limited to SMETER ADC values, and TX power)
 //
@@ -234,7 +241,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 
 
-// Below are the gain constants needed to get 10W out of the final using the TRX tune oscillator leval adjustment pot
+// Below are the gain constants needed to get 15W out of the final using the TRX tune oscillator leval adjustment pot
 // R1713 set to 3.5V p-p at TP1701. These constants are used to flatten out the TX power across all bands
 // from the TRX motherboard through the low pass filter bank, the power amplifier, and the low pass filter bank.
 // If any of these boards are swapped or re-ajusted, these gain settings will need to be updated.
@@ -262,6 +269,7 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 // These constants map ADC counts to S-Units
 // Constants are with respect to first enclosed radio.
 // These are stored in the TRX eeprom
+// Calibrated on 7.200 MHz
 
 
 #define S_UNIT_2    1355 // -115 dBm
@@ -316,7 +324,8 @@ enum BANDS {BAND_10M = 0x1, BAND_12M = 0x2, BAND_15M = 0x04, BAND_17M = 0x08, BA
 
 
 #define MAX_MENU_ITEMS 4
-#define MAX_MENU_LEVELS 3
+#define MAX_MENU_LEVELS 4
+
 
 
 #define __CONFIG_HPP__

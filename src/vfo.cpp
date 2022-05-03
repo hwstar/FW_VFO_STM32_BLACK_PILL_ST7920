@@ -1119,8 +1119,6 @@ bool VFO::begin(uint32_t init_freq)
     SEL_I2C_BUS_EXT;
     #endif
 
-    digitalWrite(PIN_STM32_LED, 0); // LED on
-
     return true;
 
 } 

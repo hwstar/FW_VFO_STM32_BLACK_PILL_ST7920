@@ -281,7 +281,8 @@ MENU menu;
 void setup() 
 {
 
- 
+  delay(500); //Wait for external vregs to stabilize
+
   // INPUTS
   pinMode(PIN_PTT, INPUT_PULLUP);
   pinMode(PIN_TUNE, INPUT_PULLUP);
@@ -298,7 +299,8 @@ void setup()
 
   // Outputs
   pinMode(PIN_STM32_LED, OUTPUT);
-  digitalWrite(PIN_STM32_LED, 0);
+  // Signify hardware initialization is not complete
+  digitalWrite(PIN_STM32_LED, 1);
   
   pinMode(PIN_PA_FAN_ENABLE, OUTPUT);
   digitalWrite(PIN_PA_FAN_ENABLE, 0);
@@ -324,26 +326,26 @@ void setup()
   analogRead(VMON_ADC);
   #endif
 
-
- // Peripheral pin mux setup
-
+  
+ 
+  // I2C initialization
   Wire.setSCL(PIN_I2C_SCL); 
   Wire.setSDA(PIN_I2C_SDA); 
   Wire.begin();
 
+
+  // SPI initialization
   SPI.setSCLK(PIN_SPI_CLK);
   SPI.setMOSI(PIN_SPI_MOSI);
   SPI.setMISO(PIN_SPI_MISO);
 
+  // UART initialization
   Serial.setRx(PIN_UART_RX);
   Serial.setTx(PIN_UART_TX);
 
 
-
   
-  digitalWrite(PIN_STM32_LED, 1);
 
-  
 
   
   // Initialize serial port
@@ -393,8 +395,9 @@ void setup()
   // Initialize vfo object
   // Events must be initialzed first for default freqency and mode to be displayed.
   if(!vfo.begin(14250000UL))
-    digitalWrite(PC13,1);
-
+    digitalWrite(PIN_STM32_LED,1); // LED off
+  else
+    digitalWrite(PIN_STM32_LED, 0); // LED on
 
 }
 
