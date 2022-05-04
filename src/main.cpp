@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <TaskScheduler.h>
 
 
 #include <config.hpp>
@@ -232,21 +231,6 @@ const menu_item settings_item = {
 
 
 //
-// Scheduler
-//
-
-
-// Scheduler object
-Scheduler ts;
-
-// Polling tasks
-void task_poll_one_ms();
-void task_poll_encoder();
-void task_poll_hundred_ms();
-Task ms_task(1, -1, &task_poll_one_ms, &ts, true);
-Task hundred_ms_task(100, -1, &task_poll_hundred_ms, &ts, true);
-
-//
 // Objects
 //
 
@@ -343,11 +327,6 @@ void setup()
   Serial.setRx(PIN_UART_RX);
   Serial.setTx(PIN_UART_TX);
 
-
-  
-
-
-  
   // Initialize serial port
   Serial1.begin(115200);
   Serial1.setTimeout(10000);
@@ -503,7 +482,6 @@ void serial_output_subscriber(event_data ed, uint32_t event_subtype)
 //
 
 void serial_commands() 
-
 {
   char c;
  
@@ -514,38 +492,9 @@ void serial_commands()
   pubsub.fire(EVENT_SERIAL, EV_SUBTYPE_NONE, c);
 }
 
-
 //
-// 1 millisecond polling task
+// Menu system set and retrieve action function for TX gain
 //
-
-void task_poll_one_ms(){
-  static uint8_t toggle = 0;
-  // Toggle test output every millisecond
-  digitalWrite(PIN_TEST_OUTPUT, (toggle ^= 1));
-  // Send 1 millisecond event
-  pubsub.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS, Time_slot);
-  // Advance to next time slot
-  Time_slot.u32_val++;
-  if(Time_slot.u32_val > 9)
-    Time_slot.u32_val = 0;
-  serial_commands(); // TODO Refactor move to comm.cpp and Remove
-}
-
-//
-// 100 millisecond polling task
-//
-
-void task_poll_hundred_ms()
-{
-  pubsub.fire(EVENT_TICK, EV_SUBTYPE_TICK_HUNDRED_MS);
-}
-
- 
-//
-// Action function for TX gain
-//
-
 void main_tx_gain_action(menu_action_data *act_data){
 
   
@@ -558,11 +507,41 @@ void main_tx_gain_action(menu_action_data *act_data){
   else if(act_data->command == MENU_CAL_SET){
     pubsub.fire(EVENT_VFO, EV_SUBTYPE_SET_TXGAIN, act_data->value);
   }
-
 }
 
+//
+// Arduino loop function
+//
 
  void loop()
  {
-   ts.execute();
+
+  //ts.execute();
+  uint32_t last_tick = 0;
+  uint32_t last_display_time = 0;
+  
+  for(;;){
+    
+    // Service display every 100 mSec
+    if((uint32_t) millis() - last_display_time > 100){
+      pubsub.fire(EVENT_TICK, EV_SUBTYPE_TICK_HUNDRED_MS);
+      last_display_time = millis();
+      
+      
+    }
+    else if(millis() != last_tick){
+      // If not servicing the display, send 1 ms Ticks to the event
+      // system, and check for serial port activity.
+      pubsub.fire(EVENT_TICK, EV_SUBTYPE_TICK_MS, Time_slot);
+      serial_commands();
+      Time_slot.u32_val++;
+      if(Time_slot.u32_val > 9)
+        Time_slot.u32_val = 0;
+      last_tick = millis();
+    }
+
+  }
+
+
+
  }

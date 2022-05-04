@@ -571,6 +571,7 @@ void VFO::service_metering(event_data ed)
     // Below executed every 10ms.
     static uint16_t peak_timer;
     static ed_meter_info minfo;
+    static uint8_t toggle;
 
     float swr_gamma;
     uint8_t new_peak_value;
@@ -695,13 +696,6 @@ void VFO::service_metering(event_data ed)
                 case 3:
                     // Calculate SWR
                     if(last_ptt_mode == RADIO_TUNE){
-                        if(swr_reverse_voltage == 0 || swr_forward_voltage == 0){
-                        // TODO: investigate why the SWR ADC is returning 0's on 12M and 10M occasionally
-                        swr_adc.select_channel(0);
-                        metering_tx_state = 1;
-                        break;
-                        }
-                    
                         minfo.mode = EVMM_SWR;
                         swr_gamma = ((float) swr_reverse_voltage)/((float) swr_forward_voltage);
                         swr = (1.0 + abs(swr_gamma))/(1.0 - abs(swr_gamma));
