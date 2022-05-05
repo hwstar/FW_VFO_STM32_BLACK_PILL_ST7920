@@ -31,9 +31,10 @@ extern "C" uint8_t u8x8_gpio_and_delay_stm32f411_black_pill(u8x8_t *u8x8, uint8_
 //
 //
 
-class U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL : public U8G2 {
-  public: U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL(const u8g2_cb_t *rotation, uint8_t cs, uint8_t reset = U8X8_PIN_NONE) : U8G2() {
-    u8g2_Setup_st7920_s_128x64_1(&u8g2, rotation, u8x8_byte_arduino_hw_spi, u8x8_gpio_and_delay_stm32f411_black_pill);
+
+class U8G2_ST7920_128X64_F_HW_SPI_STM32F411_BLACK_PILL : public U8G2 {
+  public: U8G2_ST7920_128X64_F_HW_SPI_STM32F411_BLACK_PILL(const u8g2_cb_t *rotation, uint8_t cs, uint8_t reset = U8X8_PIN_NONE) : U8G2() {
+    u8g2_Setup_st7920_s_128x64_f(&u8g2, rotation, u8x8_byte_arduino_hw_spi, u8x8_gpio_and_delay_stm32f411_black_pill);
     u8x8_SetPin_ST7920_HW_SPI(getU8x8(), cs, reset);
   }
 };
@@ -45,7 +46,7 @@ class U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL : public U8G2 {
 //
 // U8G2 Display class instantiation
 //
-U8G2_ST7920_128X64_1_HW_SPI_STM32F411_BLACK_PILL st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
+U8G2_ST7920_128X64_F_HW_SPI_STM32F411_BLACK_PILL st7920(U8G2_R0, PIN_SPI_CS, U8X8_PIN_NONE);
 
 
 /******************************************
@@ -400,37 +401,34 @@ void DISPLAY_DRIVER::refresh_normal_operation()
     // Update the display
     //
 
-    st7920.firstPage();
-    do {
-        /* all graphics commands have to appear within the loop body. */    
-        // VFO A and mode
-        st7920.setFont(u8g2_font_ncenB14_tr);
-        st7920.drawStr(0, 20, freqall);
-        st7920.setFont(u8g2_font_ncenB08_tr);
-        st7920.drawStr(100, 20, p_modestr);
-        // VFO B line
-        if(VALID_STR(p_freq_b_str))
-          st7920.drawStr(0, 30, p_freq_b_str );
-        // Meter line
-        if(VALID_STR(meter_value_str) && VALID_STR(meter_info.legend)){
-            st7920.drawStr(0, 40, meter_info.legend);
-            st7920.drawStr(30,40, meter_value_str);
-            if(VALID_STR(dot_str))
-              st7920.drawStr(60,40, dot_str);
-        }
-        #ifdef VMON_ADC
-        if(VALID_STR(meter_voltage_str)){
-          st7920.drawStr(100, 40,meter_voltage_str);
-        }
-        #endif
-        // Command line
-        if(VALID_STR(p_command_str))
-          st7920.drawStr(0, 50, p_command_str);
-        // Status line
-        st7920.drawStr(55, 60, tuning_increment_str);
-        st7920.drawStr(80, 60, p_agcstr);
-        st7920.drawStr(110, 60, p_radiostr);
-    } while ( st7920.nextPage() );
+    st7920.clearBuffer();
+    st7920.setFont(u8g2_font_ncenB14_tr);
+    st7920.drawStr(0, 20, freqall);
+    st7920.setFont(u8g2_font_ncenB08_tr);
+    st7920.drawStr(100, 20, p_modestr);
+    // VFO B line
+    if(VALID_STR(p_freq_b_str))
+      st7920.drawStr(0, 30, p_freq_b_str );
+    // Meter line
+    if(VALID_STR(meter_value_str) && VALID_STR(meter_info.legend)){
+      st7920.drawStr(0, 40, meter_info.legend);
+      st7920.drawStr(30,40, meter_value_str);
+      if(VALID_STR(dot_str))
+        st7920.drawStr(60,40, dot_str);
+    }
+    #ifdef VMON_ADC
+    if(VALID_STR(meter_voltage_str)){
+      st7920.drawStr(100, 40,meter_voltage_str);
+    }
+    #endif
+    // Command line
+    if(VALID_STR(p_command_str))
+      st7920.drawStr(0, 50, p_command_str);
+    // Status line
+    st7920.drawStr(55, 60, tuning_increment_str);
+    st7920.drawStr(80, 60, p_agcstr);
+    st7920.drawStr(110, 60, p_radiostr);
+    st7920.sendBuffer();
 
 }
 
@@ -444,16 +442,14 @@ void DISPLAY_DRIVER::refresh_error_message()
   char errnum_str[20];
   snprintf(errnum_str, sizeof(errnum_str) - 1,"%u", p_err_info->errcode);
 
-  st7920.firstPage();
-  do {
-      /* all graphics commands have to appear within the loop body. */    
-      st7920.setFont(u8g2_font_ncenB14_tr);
-      st7920.drawStr(0, 20, "Error");
-      st7920.drawStr(100, 20, errnum_str);
-      st7920.setFont(u8g2_font_ncenB08_tr);
-      st7920.drawStr(0, 40, p_err_info->line_1);
-      st7920.drawStr(0, 60, p_err_info->line_2);
-  } while ( st7920.nextPage() );
+  st7920.clearBuffer();
+  st7920.setFont(u8g2_font_ncenB14_tr);
+  st7920.drawStr(0, 20, "Error");
+  st7920.drawStr(100, 20, errnum_str);
+  st7920.setFont(u8g2_font_ncenB08_tr);
+  st7920.drawStr(0, 40, p_err_info->line_1);
+  st7920.drawStr(0, 60, p_err_info->line_2);
+  st7920.sendBuffer();
 
 
   if(p_err_info->errlevel == ERROR_LEVEL_HARD)
@@ -467,20 +463,19 @@ void DISPLAY_DRIVER::refresh_error_message()
 void DISPLAY_DRIVER::refresh_menu_message()
 {
  
-  st7920.firstPage();
-  do {
-      uint8_t i,y;
-      /* all graphics commands have to appear within the loop body. */    
-      st7920.setFont(u8g2_font_ncenB14_tr);
-      st7920.drawStr(0, 20, p_menu_info->menu_name);
-      st7920.setFont(u8g2_font_ncenB08_tr);
-      for(i = 0; i < p_menu_info->item_count; i++){
-        y = 30+(i*10);
-        if(i == p_menu_info->selection) // If current menu item matches selection
-          st7920.drawStr(0, y, ">");
-        st7920.drawStr(10, y, p_menu_info->items[i]);
-      }
-  } while ( st7920.nextPage() );
+  uint8_t i,y;
+  st7920.clearBuffer();
+  st7920.setFont(u8g2_font_ncenB14_tr);
+  st7920.drawStr(0, 20, p_menu_info->menu_name);
+  st7920.setFont(u8g2_font_ncenB08_tr);
+  for(i = 0; i < p_menu_info->item_count; i++){
+    y = 30+(i*10);
+    if(i == p_menu_info->selection) // If current menu item matches selection
+      st7920.drawStr(0, y, ">");
+    st7920.drawStr(10, y, p_menu_info->items[i]);
+  }
+  st7920.sendBuffer();
+
 }
 
 /*
@@ -495,20 +490,18 @@ void DISPLAY_DRIVER::refresh_u16_cal_message()
   snprintf(incr_str, 5, "%d", p_cal_menu_info_u16->increment);
   incr_str[5] = 0;
  
-  st7920.firstPage();
-  do {
-      /* all graphics commands have to appear within the loop body. */    
-      st7920.setFont(u8g2_font_ncenB14_tr);
-      st7920.drawStr(0, 20, p_cal_menu_info_u16->name);
+  st7920.clearBuffer();
+  st7920.setFont(u8g2_font_ncenB14_tr);
+  st7920.drawStr(0, 20, p_cal_menu_info_u16->name);
      
-      st7920.setFont(u8g2_font_ncenB08_tr);   
-      st7920.drawStr(10, 40, str);
-      if(VALID_STR(p_cal_menu_info_u16->extra_info)){
-        st7920.drawStr(60, 40, p_cal_menu_info_u16->extra_info);
-      }
-      st7920.drawStr(90, 40, incr_str);
-      
-  } while ( st7920.nextPage() );
+  st7920.setFont(u8g2_font_ncenB08_tr);   
+  st7920.drawStr(10, 40, str);
+  if(VALID_STR(p_cal_menu_info_u16->extra_info)){
+    st7920.drawStr(60, 40, p_cal_menu_info_u16->extra_info);
+  }
+  st7920.drawStr(90, 40, incr_str);
+  st7920.sendBuffer();
+
 }
 
 
